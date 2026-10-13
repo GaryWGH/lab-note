@@ -83,6 +83,32 @@ nav.bottom a[aria-current="page"]{color:var(--accent);background:var(--accent-so
 .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .viewer img{max-width:100%;max-height:100%;border-radius:6px}
 [hidden]{display:none!important}
+dl.plan{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font-size:.9rem}
+dl.plan dt{color:var(--muted);font-size:.78rem;padding-top:2px;white-space:nowrap}
+dl.plan dd{margin:0;white-space:pre-wrap;min-width:0}
+details>summary{cursor:pointer;color:var(--accent)}
+.steps.compact .step{grid-template-columns:22px 1fr;padding:6px 0;gap:2px 8px}
+.steps.compact .step input[type=checkbox]{width:18px;height:18px}
+.sl{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;min-width:0}
+.sl .tt{font-weight:500}
+.sl .d{font-size:.8rem;color:var(--muted)}
+.sl .tag{font-size:.72rem;color:var(--accent);white-space:nowrap}
+.sf{grid-column:2;display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
+.sf label{display:inline-flex;gap:5px;align-items:center;font-size:.78rem;color:var(--muted)}
+.sf input,.sf select{width:110px;padding:2px 6px;font-size:.85rem}
+.step.done .sl .tt{color:var(--muted);text-decoration:line-through}
+table.sheet{font-size:.85rem}
+table.sheet th,table.sheet td{padding:3px 4px;vertical-align:middle}
+table.sheet thead th{color:var(--ink);font-size:.82rem;font-weight:600;min-width:72px;white-space:normal}
+table.sheet tbody th{color:var(--muted);font-weight:500;font-size:.78rem;white-space:normal;min-width:78px;max-width:120px}
+table.sheet th:first-child{position:sticky;left:0;background:var(--paper);z-index:1}
+table.sheet input,table.sheet select{padding:4px 5px;font-size:.85rem;min-width:64px}
+table.sheet tr.design th{color:var(--accent)}
+table.sheet tr.design input{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+table.sheet tr.sec th{color:var(--ink);font-weight:600;font-size:.8rem;padding-top:12px;border-bottom:1px solid var(--ink)}
+table.sheet tr.sec td{border-bottom:1px solid var(--ink)}
+table.sheet td.calc{font-family:var(--f-mono);color:var(--accent)}
+@media print{nav.bottom,button,#syncStatus,details:not([open]){display:none!important}body{padding:0}.card{border:0;padding:6px 0}}
 </style>
 </head>
 <body>
@@ -115,12 +141,12 @@ const SAMPLE_STATUS=['计划','制备中','可用','已用完','失败'];
 const PT={
   none:{name:'不使用流程单',steps:[]},
   pilc:{name:'PILC 墨水制备（Oh 2024 流程）',steps:[
-    {t:'称量 PEDOT:PSS 溶液',f:[['m_pedot','实际质量 (g)','num'],['lot_pedot','批号','text']]},
-    {t:'加去离子水（PEDOT:PSS 质量的一半）',f:[['m_water','实际质量 (g)','num']]},
-    {t:'加入添加剂',d:'按实验方案的目标量称量；吸湿试剂先干燥。',f:[['m_add','实际质量 (mg)','num'],['dissolve','溶解状态','sel:完全溶解|轻微浑浊|可见油滴']]},
-    {t:'搅拌 900 rpm ≥ 12 h',f:[['pH','混合后 pH','num']]},
-    {t:'液氮 10 min，冻干 72 h',d:'可在“今天”里加一个计时提醒。',f:[]},
-    {t:'冻干物剪碎 + 10 mL 水，尖端超声 2 h（30%）',f:[['m_fd','冻干物用量 (mg)','num']]},
+    {t:'称量 PEDOT:PSS 溶液',f:[['m_pedot','实际质量 (g)','num','gd','PEDOT:PSS (g)'],['lot_pedot','批号','text']]},
+    {t:'加去离子水（PEDOT:PSS 质量的一半）',f:[['m_water','实际质量 (g)','num','gd','去离子水 (g)']]},
+    {t:'加入添加剂',d:'吸湿试剂先干燥。',f:[['m_add','实际质量 (mg)','num','gd','添加剂 (mg)'],['dissolve','溶解状态','sel:完全溶解|轻微浑浊|可见油滴','g','溶解状态']]},
+    {t:'搅拌 900 rpm ≥ 12 h',f:[['pH','混合后 pH','num','g','混合后 pH']]},
+    {t:'液氮 10 min，冻干 72 h',d:'可在“今天”里加计时提醒。',f:[]},
+    {t:'冻干物剪碎 + 10 mL 水，尖端超声 2 h（30%）',f:[['m_fd','冻干物用量 (mg)','num','g','冻干物 (mg)']]},
     {t:'加 Tween 80 30 mg，超声 3 min（20%）',f:[]},
     {t:'离心 45 min，倒上清',d:'记录 RCF，不要只记转速。',f:[['rcf','RCF (g)','num']]},
     {t:'补 10 mL 水、混匀、同条件再离心，取沉淀',f:[]}
@@ -128,17 +154,18 @@ const PT={
   fesoak:{name:'Fe³⁺ 浸泡交联（打印电阻）',steps:[
     {t:'同批打印并干燥',d:'所有组同一批墨水、同一针头和程序，打印后随机分组。',f:[['print','打印参数','text']]},
     {t:'测处理前阻值 R₀（记在“阻值稳定性”测量里）',f:[]},
-    {t:'配 FeCl₃ 溶液并测 pH',d:'不要调 pH：高于约 2–3 会生成氢氧化铁沉淀。现配现用。',f:[['conc','浓度 (mM)','num'],['m_salt','称量 (mg)','num'],['pH','实测 pH','num']]},
+    {t:'配 FeCl₃ 溶液并测 pH',d:'不要调 pH：高于约 2–3 会生成氢氧化铁沉淀。现配现用。',f:[['conc','浓度 (mM)','num','gd','FeCl₃ 浓度 (mM)'],['m_salt','称量 (mg)','num','gd','FeCl₃ (mg)'],['pH','实测 pH','num','g','溶液 pH']]},
     {t:'浸泡',f:[['t_soak','时间 (min)','num']]},
     {t:'去离子水漂洗 3 × 30 s，干燥',f:[['dry','干燥条件','text']]}
   ]},
   print:{name:'DIW 打印',steps:[
-    {t:'墨水准备与脱泡',f:[['ink','墨水样品号','text']]},
+    {t:'墨水准备与脱泡',f:[['ink','墨水样品号','text','g','墨水样品号']]},
     {t:'设置打印参数',f:[['nozzle','针头内径 (µm)','num'],['pressure','气压 (kPa)','num'],['speed','速度 (mm/s)','num'],['layers','层数','num']]},
     {t:'打印',f:[['substrate','基底','text']]},
     {t:'干燥 / 后处理',f:[['post','条件','text']]}
   ]}
 };
+const MT_DEFAULT={pilc:'sep',fesoak:'rstab',print:'generic',none:''};
 /* measurement templates */
 const MT={
   sep:{name:'离心分相评估',fields:[['sup','上清颜色','sel:无色|浅蓝|蓝|深蓝'],['m_fd','冻干物用量 (mg)','num'],['dry','沉淀干重 (mg)','num'],['ext','挤出表现','sel:可挤出且保形|可挤出但塌陷|难以挤出']],calcs:['yield']},
@@ -353,7 +380,6 @@ function vToday(){
   const L=live('logs');
   const timers=L.filter(l=>l.kind==='计时'&&!l.done&&l.due).sort((a,b)=>a.due<b.due?-1:1);
   const todays=L.filter(l=>l.date===today()&&l.kind!=='计时').sort((a,b)=>a.createdAt<b.createdAt?1:-1);
-  const queue=live('experiments').filter(e=>['计划','进行中'].includes(e.status)).map(e=>({e,l:lam(e)})).sort((a,b)=>(b.l??-1)-(a.l??-1)).slice(0,3);
   const draft=window.__draft||(window.__draft={kind:'记录',text:'',projectId:'',experimentId:'',hours:'',rh:'',temp:'',due:''});
   let h=head('今天',today());
   if(!ghReady())h+=`<div class="banner">数据目前只保存在本机。到 <a href="#/settings">设置</a> 连接 GitHub 私有仓库后，手机和电脑会自动同步，照片也能保存。</div>`;
@@ -370,7 +396,8 @@ function vToday(){
    <div class="row" style="margin-top:10px"><button type="button" data-act="addLog">保存</button><span class="muted small">保存后可在记录里加照片</span></div>
   </section>`;
   if(timers.length)h+=`<section class="card"><h2>等待中</h2>${timers.map(t=>{const ms=new Date(t.due)-Date.now();const left=ms<=0?'<span class="pill warn">已到时间</span>':`<span class="pill amber">${ms>864e5?Math.floor(ms/864e5)+' 天 ':''}${Math.floor(ms%864e5/36e5)} 小时后</span>`;return `<div class="timer"><div><div>${esc(t.text||'计时')}</div><div class="muted small">${t.experimentId?esc(t.experimentId)+' · ':''}到期 ${esc(t.due.replace('T',' '))}</div></div><div class="row">${left}<button class="ghost sm" data-act="timerDone" data-id="${t.id}">完成</button></div></div>`;}).join('')}</section>`;
-  h+=`<section class="card"><div class="row between"><h2>实验队列</h2><a class="small" href="#/exps">全部</a></div>${queue.length?`<div class="list">${queue.map(({e,l})=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">λ = ${l==null?'未估计':fmt(l,3)+' /天'} · 成功率 ${e.p?Math.round(e.p*100)+'%':'—'} · ${e.days||'—'} 天</div></a>`).join('')}</div>`:'<div class="muted small">没有计划中的实验。</div>'}<p class="muted small" style="margin:8px 0 0">按 λ = ln(1/成功率) ÷ 日历天数 排序：单位时间里最可能暴露失败的实验排前面（Steinhardt）。</p></section>`;
+  const act=live('experiments').filter(e=>['计划','进行中','等待结果'].includes(e.status)).sort((a,b)=>a.id<b.id?1:-1);
+  h+=`<section class="card"><div class="row between"><h2>正在做的实验</h2><a class="small" href="#/exps">全部</a></div>${act.length?`<div class="list">${act.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.title||e.id)}</span>${pill(e.status)}</div><div class="meta">${esc(e.id)} · ${live('samples').filter(x=>x.experimentId===e.id).length} 组</div></a>`).join('')}</div>`:'<div class="muted small">没有进行中的实验。</div>'}</section>`;
   h+=`<section class="card"><h2>今天的记录</h2>${todays.length?`<div class="list">${todays.map(logItem).join('')}</div>`:'<div class="muted small">今天还没有记录。</div>'}</section>`;
   return h;
 }
@@ -384,47 +411,77 @@ function logItem(l){
 
 function vExps(){
   const E=live('experiments');const fil=window.__expFil||'活跃';
-  const shown=E.filter(e=>fil==='全部'||(fil==='活跃'?['计划','进行中','等待结果'].includes(e.status):e.status===fil)).map(e=>({e,l:lam(e)})).sort((a,b)=>(b.l??-1)-(a.l??-1));
-  let h=head('实验','按 λ 排序',`<button class="sm" data-act="newExp">新建</button>`);
+  const shown=E.filter(e=>fil==='全部'||(fil==='活跃'?['计划','进行中','等待结果'].includes(e.status):e.status===fil)).sort((a,b)=>a.id<b.id?1:-1).map(e=>({e}));
+  let h=head('实验','',`<button class="sm" data-act="newExp">新建</button>`);
   h+=`<div class="chips">${['活跃','完成','放弃','全部'].map(k=>`<button class="chip" data-expfil="${k}" aria-pressed="${fil===k}">${k}</button>`).join('')}</div>`;
-  h+=`<section class="card">${shown.length?`<div class="list">${shown.map(({e,l})=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(get('projects',e.projectId)?.name||'')} · λ ${l==null?'—':fmt(l,3)} · ${e.p?Math.round(e.p*100)+'%':'—'} · ${e.days||'—'} 天${e.evidence?' · '+esc(e.evidence):''}</div></a>`).join('')}</div>`:'<div class="muted small">没有符合条件的实验。</div>'}</section>`;
+  h+=`<section class="card">${shown.length?`<div class="list">${shown.map(({e})=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(get('projects',e.projectId)?.name||'')} · ${live('samples').filter(x=>x.experimentId===e.id).length} 组${e.evidence?' · '+esc(e.evidence):''}</div></a>`).join('')}</div>`:'<div class="muted small">没有符合条件的实验。</div>'}</section>`;
   return h;
 }
 
+function expTpl(e,S){return e.tpl||(S.find(x=>x.proc?.template&&x.proc.template!=='none')?.proc.template)||'none';}
+function expMtpl(e,S,tpl){if(e.mtpl!=null)return e.mtpl;const ids=new Set(S.map(x=>x.id));const m=live('measurements').find(x=>ids.has(x.sampleId));return m?.template||MT_DEFAULT[tpl]||'';}
+function measOf(sid,tk){return live('measurements').filter(m=>m.sampleId===sid&&m.template===tk).sort((a,b)=>a.createdAt<b.createdAt?-1:1)[0];}
+const nonEmpty=o=>{const r={};Object.entries(o||{}).forEach(([k,v])=>{if(v!==''&&v!=null)r[k]=v;});return r;};
+function mergedVals(m){const s=db.samples[m?.sampleId];return Object.assign({},nonEmpty(s?.proc?.vals),nonEmpty(m?.vals));}
+function cellIn(bind,type,val,extra){
+  if(type.startsWith('sel:'))return `<select ${bind} ${extra||''}><option value=""></option>${type.slice(4).split('|').map(x=>`<option${x===String(val??'')?' selected':''}>${esc(x)}</option>`).join('')}</select>`;
+  return `<input ${bind} ${extra||''} ${type==='num'?'inputmode="decimal" class="mono"':''} value="${esc(val??'')}">`;
+}
 function vExp(id){
   const e=get('experiments',id);if(!e)return notFound();
   const pj=get('projects',e.projectId);const figs=pj?.outline?.figs||[];
   const S=live('samples').filter(s=>s.experimentId===id).sort((a,b)=>a.id<b.id?-1:1);
-  regions.lam=()=>{const l=lam(e);return `λ = <b class="mono">${l==null?'—':fmt(l,3)}</b> /天<span class="muted small">（成功率越低、耗时越短，越应该先做）</span>`;};
-  let h=head(esc(e.id),esc(pj?.name||''),`<button class="danger sm" data-act="del" data-c="experiments" data-id="${e.id}">删除</button>`);
-  h+=`<section class="card"><div class="grid">
+  const tpl=expTpl(e,S),T=PT[tpl]||PT.none,mtk=expMtpl(e,S,tpl),MTt=MT[mtk];
+  const done=e.proc?.done||{},pv=e.proc?.vals||{};
+  const PLAN=[['question','问题'],['hypothesis','假设'],['plan','方案'],['criteria','验收']];
+  regions.plan=()=>{const rows=PLAN.filter(([k])=>(e[k]||'').trim());return rows.length?`<dl class="plan">${rows.map(([k,l])=>`<dt>${l}</dt><dd>${esc(e[k])}</dd>`).join('')}</dl>`:'<div class="muted small">还没有写方案。</div>';};
+  let h=head(esc(e.title||e.id),`<span class="mono">${esc(e.id)}</span> · ${esc(pj?.name||'未归入项目')}`,`<span style="width:auto">${cellIn(`data-b="experiments|${esc(id)}|status"`,optsOf(EXP_STATUS),e.status,'aria-label="状态" style="width:auto;padding:3px 6px"')}</span>`);
+  const empty=!PLAN.some(([k])=>(e[k]||'').trim());
+  h+=`<section class="card"><div id="r_plan">${regions.plan()}</div>
+   <details style="margin-top:8px"${empty?' open':''}><summary class="small">编辑方案与基本信息</summary><div class="grid" style="margin-top:8px">
     ${field('experiments',id,'title','标题','text',e.title,{full:true})}
     ${field('experiments',id,'projectId','项目',projOpts(),e.projectId)}
     ${field('experiments',id,'figId','服务于论文中的图',figs.length?'sel:'+figs.map(f=>f.id+'::'+f.id+' '+f.title).join('|'):'sel:',e.figId)}
-    ${field('experiments',id,'status','状态',optsOf(EXP_STATUS),e.status)}
-    ${field('experiments',id,'question','要回答的问题','area',e.question)}
-    ${field('experiments',id,'hypothesis','假设与依据','area',e.hypothesis)}
-    ${field('experiments',id,'plan','方案（分组、剂量、样品数）','area',e.plan)}
-    ${field('experiments',id,'criteria','成功 / 验收标准','area',e.criteria)}
-  </div></section>`;
-  h+=`<section class="card"><h2>事前估计</h2><div class="grid">
-    ${field('experiments',id,'p','成功概率','sel:'+P_BUCKETS.map(([v,l])=>v+'::'+l).join('|'),e.p,{r:'lam'})}
-    ${field('experiments',id,'days','日历天数（含等待）','num',e.days,{r:'lam'})}
-    ${field('experiments',id,'handsOn','动手时间 (h)','num',e.handsOn)}
-  </div><div id="r_lam" style="margin-top:8px">${regions.lam()}</div></section>`;
-  h+=`<section class="card"><div class="row between"><h2>样品（每个处理组一个）</h2><button class="ghost sm" data-act="newSample" data-exp="${id}">新建单个</button></div>
-  <div class="batch" style="margin:8px 0 10px"><input id="batchNames" placeholder="批量建组：组名用逗号分开，如 LiTFSI, EMIM:TFSI, EMIM:TCM">
-  <div class="row" style="margin-top:6px;gap:8px"><select id="batchTpl" style="width:auto">${Object.entries(PT).map(([k,t])=>`<option value="${k}"${k===(S[0]?.proc?.template||'none')?' selected':''}>${esc(t.name)}</option>`).join('')}</select><button class="sm" data-act="batchSamples" data-exp="${id}">批量新建</button></div></div>${S.length?`<div class="list">${S.map(s=>`<a class="item" href="#/sample/${s.id}"><div class="row between"><span class="t mono">${esc(s.id)}</span>${pill(s.status)}</div><div class="meta">${esc(s.name||'未命名')}</div></a>`).join('')}</div>`:'<div class="muted small">还没有样品。每个处理组或每批墨水建一个样品。</div>'}</section>`;
-  h+=expSummary(S);
-  h+=`<section class="card"><h2>结论与复盘</h2><div class="grid">
+    ${PLAN.map(([k,l])=>field('experiments',id,k,l,'area',e[k],{r:'plan'})).join('')}
+   </div></details></section>`;
+  // steps (shared, once)
+  h+=`<section class="card"><div class="row between"><h2 style="margin:0">步骤</h2>${cellIn(`data-b="experiments|${esc(id)}|tpl"`,'sel:'+Object.keys(PT).filter(k=>k!=='none').join('|'),tpl==='none'?'':tpl,'aria-label="流程" style="width:auto;padding:3px 6px" data-tplsel="1"').replace(/<option>(\w+)<\/option>|<option selected>(\w+)<\/option>/g,(m0,a,b)=>{const k=a||b;return `<option value="${k}"${b?' selected':''}>${esc(PT[k].name)}</option>`;})}</div>`;
+  if(T.steps.length){
+    h+='<ol class="steps compact" style="margin-top:6px">'+T.steps.map((st,i)=>{const cid='es_'+id+'_'+i;const sh=st.f.filter(f=>!f[3]),pg=st.f.filter(f=>f[3]);
+      return `<li class="step${done[i]?' done':''}"><input type="checkbox" id="${cid}" data-b="experiments|${esc(id)}|proc.done.${i}" data-bool="1" ${done[i]?'checked':''}>
+      <div class="sl"><label class="tt" for="${cid}">${i+1}. ${esc(st.t)}</label>${st.d?`<span class="d">${esc(st.d)}</span>`:''}${pg.length?`<span class="tag">↓ 各组记在表 ${i+1}</span>`:''}</div>
+      ${sh.length?`<div class="sf">${sh.map(f=>`<label>${esc(f[1])}${cellIn(`data-b="experiments|${esc(id)}|proc.vals.${f[0]}"`,f[2],pv[f[0]])}</label>`).join('')}</div>`:''}</li>`;}).join('')+'</ol>';
+    h+=`<div class="sf" style="margin-top:6px"><label style="flex:1">偏离方案${cellIn(`data-b="experiments|${esc(id)}|proc.dev"`,'text',e.proc?.dev,'placeholder="没有就留空" style="width:100%"')}</label></div>`;
+  }else h+='<div class="muted small" style="margin-top:6px">选一个流程，步骤只在这里显示一次，各组共用。</div>';
+  h+='</section>';
+  // record sheet: rows = items, columns = groups
+  h+=`<section class="card"><div class="row between"><h2 style="margin:0">记录表</h2><label class="small muted" style="display:inline-flex;gap:6px;align-items:center">结果${cellIn(`data-b="experiments|${esc(id)}|mtpl"`,'sel:'+Object.keys(MT).join('|'),mtk,'style="width:auto;padding:3px 6px" data-tplsel="1"').replace(/<option( selected)?>(\w+)<\/option>/g,(m0,sel,k)=>`<option value="${k}"${sel||''}>${esc(MT[k].name)}</option>`).replace('<option value=""></option>','<option value="">不记录</option>')}</label></div>`;
+  if(S.length){
+    const pgKeys=new Set();let rows='';
+    T.steps.forEach((st,i)=>st.f.filter(f=>f[3]).forEach(f=>{pgKeys.add(f[0]);const lb=f[4]||f[1];
+      if(f[3]==='gd')rows+=`<tr class="design"><th scope="row">${i+1} · ${esc(lb)} 设计</th>${S.map(s=>`<td>${cellIn(`data-b="samples|${esc(s.id)}|design.${f[0]}"`,f[2],s.design?.[f[0]])}</td>`).join('')}</tr>`;
+      rows+=`<tr><th scope="row">${i+1} · ${esc(lb)}${f[3]==='gd'?' 实际':''}</th>${S.map(s=>`<td>${cellIn(`data-b="samples|${esc(s.id)}|proc.vals.${f[0]}"`,f[2],s.proc?.vals?.[f[0]],(f[3]==='gd'&&s.design?.[f[0]]?`placeholder="${esc(s.design[f[0]])}"`:'')+' data-r="sheet"')}</td>`).join('')}</tr>`;}));
+    if(MTt){rows+=`<tr class="sec"><th scope="row">结果 · ${esc(MTt.name)}</th>${S.map(()=>'<td></td>').join('')}</tr>`;
+      if(mtk==='rstab'){const ST=S.map(s=>{const m=measOf(s.id,'rstab');return m?stabStats(m):null;});
+        const r=(lb,fn)=>`<tr><th scope="row">${lb}</th>${ST.map(x=>`<td class="n">${x?fn(x):'—'}</td>`).join('')}</tr>`;
+        rows+=r('n',x=>x.st.R1.n||'—')+r('CV R₁',x=>x.st.R1.cv==null?'—':fmt(x.st.R1.cv,1)+' %')+r('ΔR₁ 掺杂',x=>sgn(x.st.R1.d,1))+r('3–7 天',x=>sgn(x.st.Rd.d,1))+r('泡水',x=>sgn(x.st.Rw.d,1))+r('凝胶',x=>sgn(x.st.Rig.d,1))
+          +`<tr><th scope="row">判定</th>${ST.map(x=>{const v=x?x.verdict:'数据未齐';return `<td><span class="pill ${v==='达标'?'ok':v==='不达标'?'warn':''}">${v}</span></td>`;}).join('')}</tr>`;}
+      else MTt.fields.filter(f=>!pgKeys.has(f[0])).forEach(f=>{rows+=`<tr><th scope="row">${esc(f[1])}</th>${S.map(s=>{const m=measOf(s.id,mtk);const bind=m?`data-b="measurements|${esc(m.id)}|vals.${f[0]}"`:`data-nm="${esc(s.id)}|${mtk}|${f[0]}"`;return `<td>${cellIn(bind,f[2],m?.vals?.[f[0]],'data-r="sheet"')}</td>`;}).join('')}</tr>`;});
+    }
+    regions.sheet=()=>(MTt?.calcs||[]).map(c=>`<tr><th scope="row">${esc(CALC[c]({}).label)}</th>${S.map(s=>{const m=measOf(s.id,mtk);const v=Object.assign({},nonEmpty(s.proc?.vals),nonEmpty(m?.vals));return `<td class="n calc">${CALC[c](v).text}</td>`;}).join('')}</tr>`).join('');
+    const tail=`<tr><th scope="row">备注</th>${S.map(s=>`<td>${cellIn(`data-b="samples|${esc(s.id)}|notes"`,'text',s.notes)}</td>`).join('')}</tr>`+(MTt?`<tr><th scope="row">${mtk==='rstab'?'逐条阻值':'照片 / 详情'}</th>${S.map(s=>`<td><button class="ghost sm" data-act="measFor" data-sid="${esc(s.id)}" data-tk="${mtk}">${mtk==='rstab'?'录入':'打开'}</button></td>`).join('')}</tr>`:'');
+    h+=`<div class="tablewrap" style="margin-top:8px"><table class="sheet"><thead><tr><th></th>${S.map(s=>`<th><a href="#/sample/${esc(s.id)}">${esc(s.name||s.id)}</a></th>`).join('')}</tr></thead><tbody>${rows}</tbody><tbody id="r_sheet">${regions.sheet()}</tbody><tbody>${tail}</tbody></table></div>`;
+  }else h+='<div class="muted small" style="margin-top:8px">还没有组。在下面输入组名，每组成为表里的一列。</div>';
+  h+=`<div class="row" style="margin-top:10px;flex-wrap:nowrap"><input id="batchNames" placeholder="加组：组名用逗号分开，如 LiTFSI, EMIM:TFSI"><button class="sm" data-act="batchSamples" data-exp="${id}" style="white-space:nowrap">加组</button></div></section>`;
+  h+=`<section class="card"><h2>结论</h2><div class="grid">
     ${field('experiments',id,'result','结果与结论','area',e.result)}
     ${field('experiments',id,'evidence','证据等级',optsOf(EVIDENCE),e.evidence)}
-    ${field('experiments',id,'actualDays','实际用了几天','num',e.actualDays)}
     ${field('experiments',id,'failLayer','若失败，问题出在哪一层',optsOf(FAIL_LAYERS),e.failLayer)}
     ${field('experiments',id,'failWhy','为什么失败 / 下次怎么避免','area',e.failWhy)}
   </div></section>`;
   const logs=live('logs').filter(l=>l.experimentId===id).sort((a,b)=>a.createdAt<b.createdAt?1:-1);
   if(logs.length)h+=`<section class="card"><h2>相关日志</h2><div class="list">${logs.map(logItem).join('')}</div></section>`;
+  h+=`<div class="row" style="justify-content:flex-end"><button class="danger sm" data-act="del" data-c="experiments" data-id="${e.id}">删除这个实验</button></div>`;
   return h;
 }
 function stabStats(m){
@@ -480,9 +537,12 @@ function vSample(id){
   ${parents.length||kids.length?`<div class="small" style="margin-top:8px">${parents.length?'来源：'+parents.map(p=>`<a class="mono" href="#/sample/${esc(p)}">${esc(p)}</a>`).join('、'):''}${kids.length?'　派生：'+kids.map(k=>`<a class="mono" href="#/sample/${k.id}">${k.id}</a>`).join('、'):''}</div>`:''}
   <div class="row" style="margin-top:10px"><button class="ghost sm" data-act="derive" data-id="${id}">用它做原料，新建下游样品</button></div></section>`;
   h+=`<section class="card"><h2>照片</h2>${photosBlock('samples',s)}</section>`;
+  const exS=s.experimentId&&get('experiments',s.experimentId);
+  if(exS&&expTpl(exS,live('samples').filter(x=>x.experimentId===exS.id))!=='none'){h+=`<section class="card"><div class="note">步骤和这组的记录都在实验单里：<a href="#/exp/${esc(exS.id)}">${esc(exS.title||exS.id)}</a></div></section>`;}
+  else{
   h+=`<section class="card"><div class="row between"><h2>流程单</h2><select data-act="procTpl" data-id="${id}" style="width:auto">${Object.entries(PT).map(([k,t])=>`<option value="${k}"${proc.template===k?' selected':''}>${esc(t.name)}</option>`).join('')}</select></div>`;
   if(T.steps.length){h+='<ol class="steps">'+T.steps.map((st,i)=>{const done=!!proc.done?.[i];const cid='st_'+id+'_'+i;return `<li class="step${done?' done':''}"><input type="checkbox" id="${cid}" data-b="samples|${esc(id)}|proc.done.${i}" data-bool="1" ${done?'checked':''}><label class="tt" for="${cid}">${esc(st.t)}</label>${st.d?`<div class="d">${esc(st.d)}</div>`:''}${st.f.length?`<div class="fs">${st.f.map(f=>field('samples',id,'proc.vals.'+f[0],f[1],f[2],proc.vals?.[f[0]])).join('')}</div>`:''}</li>`;}).join('')+'</ol>';}
-  h+=`<div class="grid" style="margin-top:8px">${field('samples',id,'proc.dev','偏离方案的地方（没有就留空）','area',proc.dev)}</div></section>`;
+  h+=`<div class="grid" style="margin-top:8px">${field('samples',id,'proc.dev','偏离方案的地方（没有就留空）','area',proc.dev)}</div></section>`;}
   h+=`<section class="card"><div class="row between"><h2>测量</h2><div class="row"><select id="newMeasT" style="width:auto">${Object.entries(MT).map(([k,t])=>`<option value="${k}">${esc(t.name)}</option>`).join('')}</select><button class="sm" data-act="newMeas" data-id="${id}">添加</button></div></div>${M.length?`<div class="list">${M.map(m=>`<a class="item" href="#/meas/${m.id}"><div class="row between"><span class="t">${esc(MT[m.template]?.name||m.template)}</span><span class="mono small muted">${esc(m.id)}</span></div><div class="meta">${esc(m.date||'')}${m.template==='rstab'?' · '+stabStats(m).verdict:''}</div></a>`).join('')}</div>`:'<div class="muted small">还没有测量。</div>'}</section>`;
   return h;
 }
@@ -507,7 +567,7 @@ function gridFoot(m){const {st}=stabStats(m);const cols=MT.rstab.table.cols;
 function calcBox(m,T){
   if(m.template==='rstab'){const {verdict,cd,cc}=stabStats(m);return `<h2>判定</h2><span class="pill ${verdict==='达标'?'ok':verdict==='不达标'?'warn':''}">${verdict}</span><div class="muted small" style="margin-top:6px">标准：R₁ 的 CV ≤ ${cc}%，且第 3–7 天、泡水、凝胶三列的单条 |ΔR| ≤ ${cd}%。</div>`;}
   if(!(T.calcs||[]).length)return '<h2>计算</h2><div class="muted small">此类测量没有自动计算项。</div>';
-  return '<h2>计算</h2>'+(T.calcs||[]).map(c=>{const r=CALC[c](m.vals||{});return `<div class="calc">${esc(r.label)}：${r.text}</div>${r.note?`<div class="muted small">${esc(r.note)}</div>`:''}`;}).join('');
+  return '<h2>计算</h2>'+(T.calcs||[]).map(c=>{const r=CALC[c](mergedVals(m));return `<div class="calc">${esc(r.label)}：${r.text}</div>${r.note?`<div class="muted small">${esc(r.note)}</div>`:''}`;}).join('');
 }
 
 function vReview(){
@@ -517,7 +577,6 @@ function vReview(){
   const hours={};L.forEach(l=>{const h=num(l.hours);if(h){const k=get('projects',l.projectId)?.name||'未指定项目';hours[k]=(hours[k]||0)+h;}});
   const E=live('experiments').filter(e=>inR((e.updatedAt||'').slice(0,10)));
   const done=E.filter(e=>e.status==='完成'||e.status==='放弃');
-  const calib=done.filter(e=>num(e.days)&&num(e.actualDays));
   const ideas=L.filter(l=>l.kind==='想法'),surprise=L.filter(l=>l.kind==='意外发现'),probs=L.filter(l=>l.kind==='问题');
   const layers={};live('experiments').filter(e=>e.failLayer).forEach(e=>layers[e.failLayer]=(layers[e.failLayer]||0)+1);
   const past=live('reviews').sort((a,b)=>a.end<b.end?1:-1);
@@ -526,7 +585,6 @@ function vReview(){
   h+=`<section class="card"><h2>这段时间</h2><div class="small">日志 ${L.length} 条 · 实验有更新 ${E.length} 个 · 结束 ${done.length} 个</div>
    <h3 style="margin-top:10px">动手时间（按项目）</h3>${Object.keys(hours).length?`<table><tbody>${Object.entries(hours).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(v,1)} h</td></tr>`).join('')}</tbody></table>`:'<div class="muted small">日志里没有填写动手时间。</div>'}
    ${done.length?`<h3 style="margin-top:10px">结束的实验</h3><div class="list">${done.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(e.evidence||'未标证据等级')}${e.failLayer?' · 问题层：'+esc(e.failLayer):''}</div><div class="small" style="white-space:pre-wrap">${esc(e.result||'（未写结论）')}</div></a>`).join('')}</div>`:''}
-   ${calib.length?`<h3 style="margin-top:10px">时间估计校准</h3><table><thead><tr><th>实验</th><th class="n">预估天</th><th class="n">实际天</th></tr></thead><tbody>${calib.map(e=>`<tr><td>${esc(e.id)}</td><td class="n">${esc(e.days)}</td><td class="n">${esc(e.actualDays)}</td></tr>`).join('')}</tbody></table>`:''}
    ${Object.keys(layers).length?`<h3 style="margin-top:10px">失败最常出在哪一层（全部记录）</h3><div class="chips">${Object.entries(layers).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="pill warn">${esc(k)} ${v}</span>`).join('')}</div>`:''}
   </section>`;
   const blk=(t,arr)=>arr.length?`<section class="card"><h2>${t}</h2><div class="list">${arr.map(logItem).join('')}</div></section>`:'';
@@ -601,8 +659,8 @@ function vSettings(){
    令牌只保存在这台设备的浏览器里，只会发给 api.github.com。手机丢失时到 GitHub 删除这个令牌即可。
   </div></section>`;
   h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
-  h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 按失败率排序、记录预估与实际：Jacob Steinhardt · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
-  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13b（样品精简 + 批量建组）</div>`;
+  h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
+  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13c（实验单：步骤一次 + 分组记录表）</div>`;
   return h;
 }
 function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到今天</a></section>';}
@@ -629,6 +687,10 @@ app.addEventListener('input',ev=>{
     const rr=t.dataset.r;if(rr==='gridfoot'){const tf=$('#r_gridfoot');if(tf)tf.innerHTML=gridFoot(r);const cb=$('#r_calc');if(cb&&regions.calc)cb.innerHTML=regions.calc();}
     else if(rr&&regions[rr]){const el=$('#r_'+rr);if(el)el.innerHTML=regions[rr]();if(rr==='grid'){const cb=$('#r_calc');if(cb&&regions.calc)cb.innerHTML=regions.calc();}}
     return;}
+  if(t.dataset.nm){const [sid,tk,key]=t.dataset.nm.split('|');let m=measOf(sid,tk);if(!m){const mid=nextId('measurements','M',true,2);m=put('measurements',{id:mid,sampleId:sid,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});}
+    m.vals=m.vals||{};m.vals[key]=t.value;touch('measurements',m.id);
+    document.querySelectorAll(`[data-nm^="${sid}|${tk}|"]`).forEach(x=>{const k=x.dataset.nm.split('|')[2];x.dataset.b=`measurements|${m.id}|vals.${k}`;delete x.dataset.nm;});
+    const el=$('#r_sheet');if(el&&regions.sheet)el.innerHTML=regions.sheet();return;}
   if(t.dataset.draft){window.__draft[t.dataset.draft]=t.value;return;}
   if(t.dataset.cfg){cfg[t.dataset.cfg]=t.value.trim();try{localStorage.setItem(LS_CFG,JSON.stringify(cfg));}catch(e){}return;}
   if(t.id==='sq'){window.__sq=t.value;const pos=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(pos,pos);return;}
@@ -637,6 +699,7 @@ app.addEventListener('input',ev=>{
 app.addEventListener('change',ev=>{
   const t=ev.target;
   if(t.dataset.b&&t.dataset.bool){const [c,id,path]=t.dataset.b.split('|');const r=db[c][id];setPath(r,path,t.checked);touch(c,id);t.closest('.step')?.classList.toggle('done',t.checked);return;}
+  if(t.dataset.b&&t.tagName==='SELECT'&&t.dataset.tplsel){render();return;}
   if(t.dataset.b&&t.tagName==='SELECT'){const [c]=t.dataset.b.split('|');if(['projectId','experimentId'].some(k=>t.dataset.b.endsWith(k)))render();return;}
   if(t.dataset.draft&&t.tagName==='SELECT'){window.__draft[t.dataset.draft]=t.value;return;}
   if(t.dataset.rv){window['__rv'+(t.dataset.rv==='start'?'Start':'End')]=t.value;render();return;}
@@ -659,8 +722,9 @@ app.addEventListener('click',ev=>{
   if(act==='newExp'){const id=nextId('experiments','E',false,3);put('experiments',{id,projectId:b.dataset.proj||'',title:'新实验',status:'计划',p:'',days:'',handsOn:''});location.hash='#/exp/'+id;return;}
   if(act==='newSample'||act==='derive'){const id=nextId('samples','S',true,2);const src=act==='derive'?db.samples[b.dataset.id]:null;put('samples',{id,name:src?(src.name||'')+' 派生':'',type:'',status:'计划',experimentId:b.dataset.exp||src?.experimentId||'',date:today(),parentIds:src?src.id:'',recipe:'',lots:'',notes:'',photos:[],proc:{template:'none',done:{},vals:{},dev:''}});location.hash='#/sample/'+id;return;}
   if(act==='batchSamples'){const names=($('#batchNames').value||'').split(/[,，;；\n]+/).map(x=>x.trim()).filter(Boolean);if(!names.length){setSync('先填组名，用逗号分开','warn');return;}
-    const tpl=$('#batchTpl').value||'none';names.forEach(n=>{const id=nextId('samples','S',true,2);put('samples',{id,name:n,type:'',status:'计划',experimentId:b.dataset.exp,date:today(),parentIds:'',recipe:'',lots:'',notes:'',photos:[],proc:{template:tpl,done:{},vals:{},dev:''}});});
-    setSync('已新建 '+names.length+' 个样品','ok');render();return;}
+    const ex=db.experiments[b.dataset.exp];const tpl=ex?expTpl(ex,live('samples').filter(x=>x.experimentId===ex.id)):'none';names.forEach(n=>{const id=nextId('samples','S',true,2);put('samples',{id,name:n,type:'',status:'计划',experimentId:b.dataset.exp,date:today(),parentIds:'',recipe:'',lots:'',notes:'',photos:[],proc:{template:tpl,done:{},vals:{},dev:''}});});
+    setSync('已加 '+names.length+' 组','ok');render();return;}
+  if(act==='measFor'){const sid=b.dataset.sid,tk=b.dataset.tk;let m=measOf(sid,tk);if(!m){const mid=nextId('measurements','M',true,2);m=put('measurements',{id:mid,sampleId:sid,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});}location.hash='#/meas/'+m.id;return;}
   if(act==='newMeas'){const tk=$('#newMeasT').value;const id=nextId('measurements','M',true,2);put('measurements',{id,sampleId:b.dataset.id,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});location.hash='#/meas/'+id;return;}
   if(act==='newProject'){const id=nextId('projects','PJ',false,2);put('projects',{id,name:'新项目',status:'进行中',goal:'',next:'',outline:{intro:'',figs:[],conclusion:''}});location.hash='#/project/'+id;return;}
   if(act==='addFig'){const p=db.projects[b.dataset.id];p.outline=p.outline||{figs:[]};p.outline.figs=p.outline.figs||[];p.outline.figs.push({id:'F'+(p.outline.figs.length+1),title:'',claim:'',status:'空'});touch('projects',p.id);render();return;}
