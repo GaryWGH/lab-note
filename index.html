@@ -83,6 +83,7 @@ nav.bottom a[aria-current="page"]{color:var(--accent);background:var(--accent-so
 .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .viewer img{max-width:100%;max-height:100%;border-radius:6px}
 [hidden]{display:none!important}
+.trow{display:flex;gap:8px;align-items:center;justify-content:space-between}
 .bar{height:4px;background:var(--soft);border-radius:2px;overflow:hidden;margin-top:5px}.bar>i{display:block;height:100%;background:var(--ok)}
 dl.plan{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font-size:.9rem}
 dl.plan dt{color:var(--muted);font-size:.78rem;padding-top:2px;white-space:nowrap}
@@ -116,10 +117,10 @@ table.sheet td.calc{font-family:var(--f-mono);color:var(--accent)}
 <div class="wrap" id="app"></div>
 <nav class="bottom" id="nav">
   <a href="#/" data-nav="">项目</a>
+  <a href="#/tasks" data-nav="tasks">任务</a>
   <a href="#/exps" data-nav="exps">实验</a>
   <a href="#/samples" data-nav="samples">样品</a>
-  <a href="#/review" data-nav="review">回顾</a>
-  <a href="#/more" data-nav="more">更多</a>
+    <a href="#/more" data-nav="more">更多</a>
 </nav>
 <div class="viewer" id="viewer" hidden></div>
 <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
@@ -129,7 +130,8 @@ table.sheet td.calc{font-family:var(--f-mono);color:var(--accent)}
 'use strict';
 /* ================= constants ================= */
 const LS_DB='labnote-db-v1', LS_META='labnote-meta-v1', LS_CFG='labnote-gh-v1';
-const COLLS=['projects','experiments','samples','measurements','logs','reviews'];
+const COLLS=['projects','experiments','samples','measurements','logs','reviews','members','tasks','tasklogs'];
+const TASK_STATUS=['待办','进行中','完成','取消'];
 const LOG_KINDS=['记录','想法','意外发现','问题','计时'];
 const EXP_STATUS=['计划','进行中','等待结果','完成','放弃'];
 const P_BUCKETS=[['0.95','95% 很有把握'],['0.9','90% 只怕意外'],['0.65','65% 能看到路径'],['0.3','30% 路径模糊']];
@@ -209,6 +211,7 @@ function load(){
   try{cfg=JSON.parse(localStorage.getItem(LS_CFG))||{};}catch(e){cfg={};}
   if(!db){db=emptyDb();seed();meta.dirty=true;}
   COLLS.forEach(c=>{if(!db[c])db[c]={};});
+  if(!Object.keys(db.members).length){const t=new Date(0).toISOString();db.members['U-1']={id:'U-1',name:'我',createdAt:t,updatedAt:t};db.members['U-2']={id:'U-2',name:'搭档',createdAt:t,updatedAt:t};}
 }
 function saveLocal(){try{localStorage.setItem(LS_DB,JSON.stringify(db));localStorage.setItem(LS_META,JSON.stringify(meta));}catch(e){setSync('本机保存失败：存储空间不足或被禁用','err');}}
 function live(c){return Object.values(db[c]).filter(r=>!r.deleted);}
@@ -378,7 +381,7 @@ let regions={};
 function head(title,sub,right){return `<header class="row between"><div style="min-width:0"><h1>${title}</h1>${sub?`<div class="muted small">${sub}</div>`:''}</div><div class="row">${right||''}<span id="syncStatus" class="pill"></span></div></header>`;}
 
 function expProgress(e){const S=live('samples').filter(x=>x.experimentId===e.id);const n=(PT[expTpl(e,S)]||PT.none).steps.length;const d=Math.min(Object.values(e.proc?.done||{}).filter(Boolean).length,n);return {n,d,g:S.length};}
-function expRow(e){const {n,d,g}=expProgress(e);return `<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.title||e.id)}</span>${pill(e.status)}</div><div class="meta">${g} 组${n?` · 步骤 ${d}/${n}`:''}</div>${n?`<div class="bar"><i style="width:${Math.round(d/n*100)}%"></i></div>`:''}</a>`;}
+function expRow(e){const {n,d,g}=expProgress(e);return `<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.title||e.id)}</span>${pill(e.status)}</div><div class="meta">${e.owner?esc(memberName(e.owner))+' · ':''}${g} 组${n?` · 步骤 ${d}/${n}`:''}</div>${n?`<div class="bar"><i style="width:${Math.round(d/n*100)}%"></i></div>`:''}</a>`;}
 function vToday(){
   const ord={'进行中':0,'暂停':1,'完成':2,'放弃':3};
   const P=live('projects').sort((a,b)=>(ord[a.status]??0)-(ord[b.status]??0)||(a.id<b.id?-1:1));
@@ -391,7 +394,10 @@ function vToday(){
     ${p.goal?`<div class="muted small" style="margin-top:4px">${esc(p.goal)}</div>`:''}
     <label class="f full" style="margin-top:10px">下一步<input data-b="projects|${esc(p.id)}|next" value="${esc(p.next||'')}" placeholder="这条线接下来要做的一件事"></label>
     ${act.length?`<div class="list" style="margin-top:8px">${act.map(expRow).join('')}</div>`:'<div class="muted small" style="margin-top:8px">没有进行中的实验。</div>'}
+    ${(()=>{const pt=OT.filter(t=>t.projectId===p.id);return pt.length?`<h3 style="margin:10px 0 0">任务</h3><div class="list">${pt.map(t=>taskRow(t,{noProj:true})).join('')}</div>`:'';})()}
     <div class="row between" style="margin-top:8px"><span class="muted small">${[fin?`已完成 ${fin} 个实验`:'',figs.length?`论文图 ${fd}/${figs.length}`:''].filter(Boolean).join(' · ')}</span><button class="ghost sm" data-act="newExp" data-proj="${p.id}">+ 实验</button></div></section>`;};
+  const OT=openTasks();
+  if(live('tasks').length)h+=`<section class="card"><div class="row between"><h2 style="margin:0">团队任务</h2><a class="small" href="#/tasks">全部</a></div><div class="chips" style="margin-top:8px">${live('members').sort((a,b)=>a.id<b.id?-1:1).map(m=>{const mine=OT.filter(t=>t.assignee===m.id);const late=mine.filter(t=>t.due&&t.due<today()).length;return `<button class="chip" data-tw="${m.id}" data-go="tasks">${esc(m.name)} ${mine.length}${late?` · <span style="color:var(--warn)">逾期 ${late}</span>`:''}</button>`;}).join('')}</div></section>`;
   h+=open.map(card).join('');
   const orphan=E.filter(e=>!e.projectId&&ACT.includes(e.status));
   if(orphan.length)h+=`<section class="card"><h2>未归入项目的实验</h2><div class="list">${orphan.map(expRow).join('')}</div></section>`;
@@ -433,12 +439,13 @@ function vExp(id){
   const done=e.proc?.done||{},pv=e.proc?.vals||{};
   const PLAN=[['question','问题'],['hypothesis','假设'],['plan','方案'],['criteria','验收']];
   regions.plan=()=>{const rows=PLAN.filter(([k])=>(e[k]||'').trim());return rows.length?`<dl class="plan">${rows.map(([k,l])=>`<dt>${l}</dt><dd>${esc(e[k])}</dd>`).join('')}</dl>`:'<div class="muted small">还没有写方案。</div>';};
-  let h=head(esc(e.title||e.id),`<span class="mono">${esc(e.id)}</span> · ${esc(pj?.name||'未归入项目')}`,`<span style="width:auto">${cellIn(`data-b="experiments|${esc(id)}|status"`,optsOf(EXP_STATUS),e.status,'aria-label="状态" style="width:auto;padding:3px 6px"')}</span>`);
+  let h=head(esc(e.title||e.id),`<span class="mono">${esc(e.id)}</span> · ${esc(pj?.name||'未归入项目')}${e.owner?' · 负责人 '+esc(memberName(e.owner)):''}`,`<span style="width:auto">${cellIn(`data-b="experiments|${esc(id)}|status"`,optsOf(EXP_STATUS),e.status,'aria-label="状态" style="width:auto;padding:3px 6px"')}</span>`);
   const empty=!PLAN.some(([k])=>(e[k]||'').trim());
   h+=`<section class="card"><div id="r_plan">${regions.plan()}</div>
    <details style="margin-top:8px"${empty?' open':''}><summary class="small">编辑方案与基本信息</summary><div class="grid" style="margin-top:8px">
     ${field('experiments',id,'title','标题','text',e.title,{full:true})}
     ${field('experiments',id,'projectId','项目',projOpts(),e.projectId)}
+    ${field('experiments',id,'owner','负责人',memberOpts(),e.owner)}
     ${field('experiments',id,'figId','服务于论文中的图',figs.length?'sel:'+figs.map(f=>f.id+'::'+f.id+' '+f.title).join('|'):'sel:',e.figId)}
     ${PLAN.map(([k,l])=>field('experiments',id,k,l,'area',e[k],{r:'plan'})).join('')}
    </div></details></section>`;
@@ -562,36 +569,10 @@ function calcBox(m,T){
   return '<h2>计算</h2>'+(T.calcs||[]).map(c=>{const r=CALC[c](mergedVals(m));return `<div class="calc">${esc(r.label)}：${r.text}</div>${r.note?`<div class="muted small">${esc(r.note)}</div>`:''}`;}).join('');
 }
 
-function vReview(){
-  const end=window.__rvEnd||today();const start=window.__rvStart||(()=>{const d=new Date(Date.now()-13*864e5);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());})();
-  const inR=d=>d&&d>=start&&d<=end;
-  const L=live('logs').filter(l=>inR(l.date));
-  const hours={};L.forEach(l=>{const h=num(l.hours);if(h){const k=get('projects',l.projectId)?.name||'未指定项目';hours[k]=(hours[k]||0)+h;}});
-  const E=live('experiments').filter(e=>inR((e.updatedAt||'').slice(0,10)));
-  const done=E.filter(e=>e.status==='完成'||e.status==='放弃');
-  const ideas=L.filter(l=>l.kind==='想法'),surprise=L.filter(l=>l.kind==='意外发现'),probs=L.filter(l=>l.kind==='问题');
-  const layers={};live('experiments').filter(e=>e.failLayer).forEach(e=>layers[e.failLayer]=(layers[e.failLayer]||0)+1);
-  const past=live('reviews').sort((a,b)=>a.end<b.end?1:-1);
-  let h=head('回顾','每 1–2 周一次（Schulman）');
-  h+=`<section class="card"><div class="grid"><label class="f" for="rv_s">开始<input id="rv_s" type="date" value="${start}" data-rv="start"></label><label class="f" for="rv_e">结束<input id="rv_e" type="date" value="${end}" data-rv="end"></label></div></section>`;
-  h+=`<section class="card"><h2>这段时间</h2><div class="small">日志 ${L.length} 条 · 实验有更新 ${E.length} 个 · 结束 ${done.length} 个</div>
-   <h3 style="margin-top:10px">动手时间（按项目）</h3>${Object.keys(hours).length?`<table><tbody>${Object.entries(hours).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(v,1)} h</td></tr>`).join('')}</tbody></table>`:'<div class="muted small">日志里没有填写动手时间。</div>'}
-   ${done.length?`<h3 style="margin-top:10px">结束的实验</h3><div class="list">${done.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(e.evidence||'未标证据等级')}${e.failLayer?' · 问题层：'+esc(e.failLayer):''}</div><div class="small" style="white-space:pre-wrap">${esc(e.result||'（未写结论）')}</div></a>`).join('')}</div>`:''}
-   ${Object.keys(layers).length?`<h3 style="margin-top:10px">失败最常出在哪一层（全部记录）</h3><div class="chips">${Object.entries(layers).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="pill warn">${esc(k)} ${v}</span>`).join('')}</div>`:''}
-  </section>`;
-  const blk=(t,arr)=>arr.length?`<section class="card"><h2>${t}</h2><div class="list">${arr.map(logItem).join('')}</div></section>`:'';
-  h+=blk('意外发现（可能是新的问题 C）',surprise)+blk('想法',ideas)+blk('遇到的问题',probs);
-  const rid='RV-'+end;const rv=db.reviews[rid]&&!db.reviews[rid].deleted?db.reviews[rid]:null;
-  h+=`<section class="card"><h2>写下总结</h2>${rv?`<div class="grid">${field('reviews',rid,'findings','实验发现','area',rv.findings)}${field('reviews',rid,'insights','洞察','area',rv.insights)}${field('reviews',rid,'progress','进展','area',rv.progress)}${field('reviews',rid,'next','下一步','area',rv.next)}${field('reviews',rid,'followed','上次的计划跟进了吗','area',rv.followed)}</div>`:`<button data-act="newReview" data-start="${start}" data-end="${end}">开始写这一期总结</button>`}</section>`;
-  if(past.length)h+=`<section class="card"><h2>往期总结</h2><div class="list">${past.map(r=>`<div class="item"><div class="t">${esc(r.start)} — ${esc(r.end)}</div><div class="small" style="white-space:pre-wrap">${esc([r.findings&&'发现：'+r.findings,r.next&&'下一步：'+r.next].filter(Boolean).join('\n'))}</div></div>`).join('')}</div></section>`;
-  return h;
-}
-
 function vMore(){
   let h=head('更多');
   h+=`<section class="card"><div class="list">
    <a class="item" href="#/projects"><div class="t">项目线与论文提纲</div><div class="meta">每条方向的目标、下一步，以及每张图需要哪些实验（Whitesides）</div></a>
-   <a class="item" href="#/ideas"><div class="t">想法池</div><div class="meta">暂时不做的想法，可以一键转成实验</div></a>
    <a class="item" href="#/search"><div class="t">搜索</div><div class="meta">日志、实验、样品、测量</div></a>
    <a class="item" href="#/settings"><div class="t">设置与同步</div><div class="meta">GitHub 私有仓库、导出与导入</div></a>
   </div></section>`;
@@ -616,10 +597,50 @@ function vProject(id){
   h+=`<section class="card"><div class="row between"><h2>实验</h2><button class="sm" data-act="newExp" data-proj="${id}">新建实验</button></div>${E.length?`<div class="list">${E.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div></a>`).join('')}</div>`:'<div class="muted small">还没有实验。</div>'}</section>`;
   return h;
 }
-function vIdeas(){
-  const I=live('logs').filter(l=>l.kind==='想法').sort((a,b)=>a.createdAt<b.createdAt?1:-1);
-  let h=head('想法池','');
-  h+=`<section class="card">${I.length?`<div class="list">${I.map(l=>`<div class="item"><div class="row between"><span class="muted small">${esc(l.date)}</span>${l.ideaStatus?pill(l.ideaStatus):''}</div><div style="white-space:pre-wrap;margin:4px 0">${esc(l.text)}</div><div class="row">${l.ideaStatus==='已转实验'&&l.toExp?`<a class="small" href="#/exp/${l.toExp}">→ ${esc(l.toExp)}</a>`:`<button class="ghost sm" data-act="ideaToExp" data-id="${l.id}">转为实验</button><button class="ghost sm" data-act="ideaDrop" data-id="${l.id}">放弃</button>`}</div></div>`).join('')}</div>`:'<div class="muted small">在“今天”里记一条类型为“想法”的日志，就会出现在这里。</div>'}</section>`;
+const memberName=id=>db.members[id]&&!db.members[id].deleted?db.members[id].name:'未分配';
+const memberOpts=()=>'sel:'+live('members').sort((a,b)=>a.id<b.id?-1:1).map(m=>m.id+'::'+m.name).join('|');
+const meName=()=>cfg.me&&db.members[cfg.me]?db.members[cfg.me].name:'';
+function dueTag(d,st){if(!d||st==='完成'||st==='取消')return '';const n=Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
+  return n<0?`<span class="pill warn">逾期 ${-n} 天</span>`:n===0?'<span class="pill amber">今天到期</span>':n<=2?`<span class="pill amber">${n} 天后</span>`:`<span class="pill">${esc(d.slice(5))} 截止</span>`;}
+const openTasks=()=>live('tasks').filter(t=>['待办','进行中'].includes(t.status)).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:(a.due||'9')>(b.due||'9')?1:(a.id<b.id?-1:1));
+function taskRow(t,opt){const pj=get('projects',t.projectId);
+  return `<div class="item trow"><a href="#/task/${esc(t.id)}" style="color:var(--ink);min-width:0;flex:1"><div class="t">${esc(t.title||'未命名任务')}</div><div class="meta">${[opt?.noWho?'':`<b>${esc(memberName(t.assignee))}</b>`,t.status==='进行中'?'进行中':'',pj&&!opt?.noProj?esc(pj.name):''].filter(Boolean).join(' · ')}</div></a><div class="row" style="flex-wrap:nowrap">${dueTag(t.due,t.status)}${['待办','进行中'].includes(t.status)?`<button class="ghost sm" data-act="taskDone" data-id="${esc(t.id)}">完成</button>`:pill(t.status)}</div></div>`;}
+function addTaskLog(taskId,text){const id='TL-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);put('tasklogs',{id,taskId,at:now(),by:cfg.me||'',text});}
+function vTasks(){
+  const who=window.__tw||'全部';const M=live('members').sort((a,b)=>a.id<b.id?-1:1);
+  const d=window.__td||(window.__td={title:'',assignee:'',due:'',projectId:''});
+  const O=openTasks().filter(t=>who==='全部'||t.assignee===who);
+  const D=live('tasks').filter(t=>['完成','取消'].includes(t.status)&&(who==='全部'||t.assignee===who)).sort((a,b)=>(a.doneAt||a.updatedAt)<(b.doneAt||b.updatedAt)?1:-1).slice(0,30);
+  let h=head('任务',meName()?'我是 '+esc(meName()):'<a href="#/settings">设置“我是谁”</a>');
+  h+=`<section class="card"><h2>分配任务</h2><div class="grid">
+    <label class="f full">任务<input data-td="title" value="${esc(d.title)}" placeholder="例如：完成三组 PILC 的离心并拍上清照片"></label>
+    <label class="f">交给<select data-td="assignee"><option value=""></option>${M.map(m=>`<option value="${m.id}"${d.assignee===m.id?' selected':''}>${esc(m.name)}</option>`).join('')}</select></label>
+    <label class="f">截止日期<input type="date" data-td="due" value="${esc(d.due)}"></label>
+    <label class="f full">项目<select data-td="projectId"><option value=""></option>${live('projects').filter(p=>!['完成','放弃'].includes(p.status)).map(p=>`<option value="${p.id}"${d.projectId===p.id?' selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
+  </div><div class="row" style="margin-top:10px"><button data-act="addTask">添加</button></div></section>`;
+  h+=`<div class="chips">${['全部',...M.map(m=>m.id)].map(k=>`<button class="chip" data-tw="${k}" aria-pressed="${who===k}">${k==='全部'?'全部':esc(memberName(k))}</button>`).join('')}</div>`;
+  h+=`<section class="card"><h2>未完成（${O.length}）</h2>${O.length?`<div class="list">${O.map(t=>taskRow(t,{noWho:who!=='全部'})).join('')}</div>`:'<div class="muted small">没有未完成的任务。</div>'}</section>`;
+  if(D.length)h+=`<details class="card"><summary class="small">已完成 / 取消（最近 ${D.length} 条）</summary><div class="list" style="margin-top:6px">${D.map(t=>taskRow(t,{noWho:who!=='全部'})).join('')}</div></details>`;
+  return h;
+}
+function vTask(id){
+  const t=get('tasks',id);if(!t)return notFound();
+  const L=live('tasklogs').filter(l=>l.taskId===id).sort((a,b)=>a.at<b.at?1:-1);
+  const exOpts='sel:'+live('experiments').filter(e=>!t.projectId||e.projectId===t.projectId).map(e=>e.id+'::'+(e.title||e.id)).join('|');
+  let h=head(esc(t.title||'任务'),`${esc(memberName(t.assignee))} ${dueTag(t.due,t.status)}`);
+  h+=`<section class="card"><div class="grid">
+    ${field('tasks',id,'title','任务','text',t.title,{full:true})}
+    ${field('tasks',id,'assignee','交给',memberOpts(),t.assignee)}
+    ${field('tasks',id,'status','状态',optsOf(TASK_STATUS),t.status)}
+    ${field('tasks',id,'due','截止日期','date',t.due)}
+    ${field('tasks',id,'projectId','项目',projOpts(),t.projectId)}
+    ${field('tasks',id,'experimentId','关联实验',exOpts,t.experimentId)}
+    ${field('tasks',id,'notes','要求 / 说明','area',t.notes)}
+  </div>${t.experimentId&&get('experiments',t.experimentId)?`<div class="small" style="margin-top:8px">→ <a href="#/exp/${esc(t.experimentId)}">打开实验单：${esc(get('experiments',t.experimentId).title)}</a></div>`:''}
+  <div class="muted small" style="margin-top:8px">${esc(memberName(t.createdBy))} 创建于 ${esc(shortDate(t.createdAt))}${t.doneAt?' · 完成于 '+esc(shortDate(t.doneAt)):''}</div></section>`;
+  h+=`<section class="card"><h2>进展记录</h2><div class="row" style="flex-wrap:nowrap"><input id="tlText" placeholder="${meName()?esc(meName())+'：':''}做到哪了、遇到什么问题"><button class="sm" data-act="addTaskLog" data-id="${esc(id)}" style="white-space:nowrap">记录</button></div>
+   ${L.length?`<div class="list" style="margin-top:8px">${L.map(l=>`<div class="item"><div class="meta">${esc(memberName(l.by))} · ${esc(shortDate(l.at))}</div><div style="white-space:pre-wrap">${esc(l.text)}</div></div>`).join('')}</div>`:'<div class="muted small" style="margin-top:8px">还没有记录。</div>'}</section>`;
+  h+=`<div class="row" style="justify-content:flex-end"><button class="danger sm" data-act="del" data-c="tasks" data-id="${esc(id)}">删除任务</button></div>`;
   return h;
 }
 function vSearch(){
@@ -628,7 +649,7 @@ function vSearch(){
     live('experiments').filter(r=>hit(r,['id','title','question','hypothesis','plan','result','failWhy'])).forEach(r=>res.push(['实验',`#/exp/${r.id}`,r.id+' '+r.title]));
     live('samples').filter(r=>hit(r,['id','name','recipe','lots','notes','proc.dev'])).forEach(r=>res.push(['样品',`#/sample/${r.id}`,r.id+' '+(r.name||'')]));
     live('measurements').filter(r=>hit(r,['id','sampleId','notes','instrument'])).forEach(r=>res.push(['测量',`#/meas/${r.id}`,r.id+' '+(MT[r.template]?.name||'')]));
-    live('logs').filter(r=>hit(r,['text'])).forEach(r=>res.push(['日志',r.experimentId?`#/exp/${r.experimentId}`:'#/review',r.date+' '+r.text.slice(0,60)]));}
+    live('logs').filter(r=>hit(r,['text'])).forEach(r=>res.push(['日志',r.experimentId?`#/exp/${r.experimentId}`:'#/',r.date+' '+r.text.slice(0,60)]));}
   let h=head('搜索','');
   h+=`<input id="q" placeholder="关键词，如 LiTFSI、批号、开裂" value="${esc(window.__q||'')}">`;
   h+=`<section class="card">${q?(res.length?`<div class="list">${res.map(([k,href,t])=>`<a class="item" href="${href}"><span class="pill">${k}</span> ${esc(t)}</a>`).join('')}</div>`:'<div class="muted small">没有结果。</div>'):'<div class="muted small">输入关键词。</div>'}</section>`;
@@ -636,6 +657,11 @@ function vSearch(){
 }
 function vSettings(){
   let h=head('设置与同步');
+  const M=live('members').sort((a,b)=>a.id<b.id?-1:1);
+  h+=`<section class="card"><h2>团队</h2><div class="grid">${M.map(m=>field('members',m.id,'name','成员 '+m.id.replace('U-',''),'text',m.name)).join('')}</div>
+   <div class="row" style="margin-top:8px"><button class="ghost sm" data-act="addMember">+ 成员</button></div>
+   <label class="f" style="margin-top:12px">这台设备的使用者（进展记录会署这个名字）<select data-cfg="me"><option value=""></option>${M.map(m=>`<option value="${m.id}"${cfg.me===m.id?' selected':''}>${esc(m.name)}</option>`).join('')}</select></label>
+   <p class="muted small" style="margin:8px 0 0">搭档要一起用：在他的手机上打开同一个网址，在下方填同样的仓库和令牌，这里选他的名字。</p></section>`;
   h+=`<section class="card"><h2>GitHub 私有仓库</h2><div class="grid">
     <label class="f" for="g_owner">GitHub 用户名<input id="g_owner" data-cfg="owner" value="${esc(cfg.owner||'')}" placeholder="（必填）" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
     <label class="f" for="g_repo">数据仓库名<input id="g_repo" data-cfg="repo" value="${esc(cfg.repo||'')}" placeholder="（必填）" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
@@ -652,7 +678,7 @@ function vSettings(){
   </div></section>`;
   h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
   h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
-  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13d（项目总览）</div>`;
+  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13e（团队任务）</div>`;
   return h;
 }
 function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到项目</a></section>';}
@@ -661,9 +687,9 @@ function notFound(){return head('找不到记录')+'<section class="card"><a hre
 function route(){const h=location.hash.replace(/^#\/?/,'');const [a,b]=h.split('/');return {a:a||'',b:b?decodeURIComponent(b):''};}
 function render(){
   regions={};const {a,b}=route();let html;
-  switch(a){case '':html=vToday();break;case 'exps':html=vExps();break;case 'exp':html=vExp(b);break;case 'samples':html=vSamples();break;case 'sample':html=vSample(b);break;case 'meas':html=vMeas(b);break;case 'review':html=vReview();break;case 'more':html=vMore();break;case 'projects':html=vProjects();break;case 'project':html=vProject(b);break;case 'ideas':html=vIdeas();break;case 'search':html=vSearch();break;case 'settings':html=vSettings();break;default:html=notFound();}
+  switch(a){case '':html=vToday();break;case 'exps':html=vExps();break;case 'exp':html=vExp(b);break;case 'samples':html=vSamples();break;case 'sample':html=vSample(b);break;case 'meas':html=vMeas(b);break;case 'tasks':html=vTasks();break;case 'task':html=vTask(b);break;case 'more':html=vMore();break;case 'projects':html=vProjects();break;case 'project':html=vProject(b);break;case 'search':html=vSearch();break;case 'settings':html=vSettings();break;default:html=notFound();}
   $('#app').innerHTML=html;
-  const navKey={'':'',exps:'exps',exp:'exps',samples:'samples',sample:'samples',meas:'samples',review:'review'}[a];
+  const navKey={'':'',exps:'exps',exp:'exps',samples:'samples',sample:'samples',meas:'samples',tasks:'tasks',task:'tasks'}[a];
   document.querySelectorAll('#nav a').forEach(x=>x.setAttribute('aria-current',x.dataset.nav===(navKey===undefined?'more':navKey)?'page':'false'));
   setSync(syncMsg.t||(ghReady()?'':'仅本机（未连接 GitHub）'),syncMsg.cls||(ghReady()?'':'warn'));
   hydratePhotos();
@@ -684,6 +710,7 @@ app.addEventListener('input',ev=>{
     document.querySelectorAll(`[data-nm^="${sid}|${tk}|"]`).forEach(x=>{const k=x.dataset.nm.split('|')[2];x.dataset.b=`measurements|${m.id}|vals.${k}`;delete x.dataset.nm;});
     const el=$('#r_sheet');if(el&&regions.sheet)el.innerHTML=regions.sheet();return;}
   if(t.dataset.draft){window.__draft[t.dataset.draft]=t.value;return;}
+  if(t.dataset.td){window.__td[t.dataset.td]=t.value;return;}
   if(t.dataset.cfg){cfg[t.dataset.cfg]=t.value.trim();try{localStorage.setItem(LS_CFG,JSON.stringify(cfg));}catch(e){}return;}
   if(t.id==='sq'){window.__sq=t.value;const pos=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(pos,pos);return;}
   if(t.id==='q'){window.__q=t.value;const pos=t.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(pos,pos);return;}
@@ -692,15 +719,17 @@ app.addEventListener('change',ev=>{
   const t=ev.target;
   if(t.dataset.b&&t.dataset.bool){const [c,id,path]=t.dataset.b.split('|');const r=db[c][id];setPath(r,path,t.checked);touch(c,id);t.closest('.step')?.classList.toggle('done',t.checked);return;}
   if(t.dataset.b&&t.tagName==='SELECT'&&t.dataset.tplsel){render();return;}
+  if(t.dataset.b&&t.tagName==='SELECT'&&/^tasks\|.*\|status$/.test(t.dataset.b)){const id=t.dataset.b.split('|')[1];const r=db.tasks[id];if(r.status==='完成'&&!r.doneAt)r.doneAt=now();addTaskLog(id,'状态改为：'+r.status);render();return;}
+  if(t.dataset.cfg==='me'){render();return;}
   if(t.dataset.b&&t.tagName==='SELECT'){const [c]=t.dataset.b.split('|');if(['projectId','experimentId'].some(k=>t.dataset.b.endsWith(k)))render();return;}
   if(t.dataset.draft&&t.tagName==='SELECT'){window.__draft[t.dataset.draft]=t.value;return;}
-  if(t.dataset.rv){window['__rv'+(t.dataset.rv==='start'?'Start':'End')]=t.value;render();return;}
   if(t.dataset.act==='procTpl'){const s=db.samples[t.dataset.id];s.proc=s.proc||{done:{},vals:{},dev:''};s.proc.template=t.value;s.proc.done={};touch('samples',s.id);render();return;}
   if(t.id==='impFile'){const f=t.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);const d=o.data||o;if(!d.samples&&!d.logs)throw 0;db=merge(db,d);changed();render();setSync('已导入并合并','ok');}catch(e){setSync('导入失败：不是本记录本导出的文件','err');}t.value='';};rd.readAsText(f);}
 });
 app.addEventListener('click',ev=>{
   const v=ev.target.closest('[data-view]');if(v&&v.src){const vw=$('#viewer');vw.innerHTML=`<img src="${v.src}" alt="照片">`;vw.hidden=false;return;}
   const k=ev.target.closest('[data-kind]');if(k){window.__draft.kind=k.dataset.kind;render();return;}
+  const tw=ev.target.closest('[data-tw]');if(tw){window.__tw=tw.dataset.tw;if(tw.dataset.go)location.hash='#/tasks';else render();return;}
   const ef=ev.target.closest('[data-expfil]');if(ef){window.__expFil=ef.dataset.expfil;render();return;}
   const b=ev.target.closest('[data-act]');if(!b||b.tagName==='SELECT')return;const act=b.dataset.act;
   if(act==='addLog'){const d=window.__draft;if(!d.text.trim()&&d.kind!=='计时'){setSync('先写点内容','warn');return;}
@@ -716,6 +745,12 @@ app.addEventListener('click',ev=>{
   if(act==='batchSamples'){const names=($('#batchNames').value||'').split(/[,，;；\n]+/).map(x=>x.trim()).filter(Boolean);if(!names.length){setSync('先填组名，用逗号分开','warn');return;}
     const ex=db.experiments[b.dataset.exp];const tpl=ex?expTpl(ex,live('samples').filter(x=>x.experimentId===ex.id)):'none';names.forEach(n=>{const id=nextId('samples','S',true,2);put('samples',{id,name:n,type:'',status:'计划',experimentId:b.dataset.exp,date:today(),parentIds:'',recipe:'',lots:'',notes:'',photos:[],proc:{template:tpl,done:{},vals:{},dev:''}});});
     setSync('已加 '+names.length+' 组','ok');render();return;}
+  if(act==='addTask'){const d=window.__td;if(!(d.title||'').trim()){setSync('先写任务内容','warn');return;}
+    const id=nextId('tasks','T',true,2);put('tasks',{id,title:d.title.trim(),assignee:d.assignee,due:d.due,projectId:d.projectId,experimentId:'',status:'待办',notes:'',createdBy:cfg.me||''});
+    window.__td={title:'',assignee:d.assignee,due:'',projectId:d.projectId};setSync('已添加','ok');render();return;}
+  if(act==='taskDone'){const t=db.tasks[b.dataset.id];t.status='完成';t.doneAt=now();touch('tasks',t.id);addTaskLog(t.id,'标记为完成');render();return;}
+  if(act==='addTaskLog'){const x=$('#tlText');const v=(x.value||'').trim();if(!v)return;addTaskLog(b.dataset.id,v);render();return;}
+  if(act==='addMember'){const id=nextId('members','U',false,1);put('members',{id,name:'新成员'});render();return;}
   if(act==='measFor'){const sid=b.dataset.sid,tk=b.dataset.tk;let m=measOf(sid,tk);if(!m){const mid=nextId('measurements','M',true,2);m=put('measurements',{id:mid,sampleId:sid,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});}location.hash='#/meas/'+m.id;return;}
   if(act==='newMeas'){const tk=$('#newMeasT').value;const id=nextId('measurements','M',true,2);put('measurements',{id,sampleId:b.dataset.id,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});location.hash='#/meas/'+id;return;}
   if(act==='newProject'){const id=nextId('projects','PJ',false,2);put('projects',{id,name:'新项目',status:'进行中',goal:'',next:'',outline:{intro:'',figs:[],conclusion:''}});location.hash='#/project/'+id;return;}
