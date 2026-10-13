@@ -226,7 +226,7 @@ function b64utf8(s){const b=new TextEncoder().encode(s);let out='';for(let i=0;i
 async function ghGetText(path){
   const br=cfg.branch||'main';
   const r=await fetch(ghUrl(path)+'?ref='+encodeURIComponent(br),{headers:ghHead()});
-  if(r.status===404)return {sha:null,text:null};
+  if(r.status===404||r.status===409)return {sha:null,text:null};
   if(!r.ok)throw new Error('读取失败 '+r.status);
   const j=await r.json();
   const r2=await fetch(ghUrl(path)+'?ref='+encodeURIComponent(br),{headers:ghHead('application/vnd.github.raw+json')});
@@ -268,6 +268,29 @@ async function sync(manual){
     throw new Error('多次写入冲突，请稍后再试');
   }catch(e){setSync(String(e.message||e)+(navigator.onLine?'':'（离线，联网后自动重试）'),'err');}
   syncing=false;
+}
+function inline(t,cls){const el=$('#syncInline');if(el){el.textContent=t;el.style.color=cls==='ok'?'var(--ok)':cls==='err'?'var(--warn)':'var(--muted)';}}
+async function connectAndSync(btn){
+  ['owner','repo','branch','token'].forEach(k=>{const el=$('#g_'+k);if(el)cfg[k]=el.value.trim();});
+  if(!cfg.branch)cfg.branch='main';
+  try{localStorage.setItem(LS_CFG,JSON.stringify(cfg));}catch(e){}
+  const miss=[['owner','GitHub 用户名'],['repo','数据仓库名'],['token','访问令牌']].filter(([k])=>!cfg[k]).map(x=>x[1]);
+  if(miss.length){inline('请先填写：'+miss.join('、')+'。输入框里的灰色字只是提示，不是已填的内容。','err');return;}
+  btn.disabled=true;inline('正在检查仓库和令牌…','');
+  try{
+    const r=await fetch('https://api.github.com/repos/'+encodeURIComponent(cfg.owner)+'/'+encodeURIComponent(cfg.repo),{headers:ghHead()});
+    if(r.status===401)throw new Error('令牌无效或已过期，请重新生成并完整粘贴。');
+    if(r.status===404)throw new Error('找不到仓库 '+cfg.owner+'/'+cfg.repo+'。请检查用户名和仓库名的拼写，并确认生成令牌时在 Repository access 里勾选了这个仓库。');
+    if(r.status===403)throw new Error('GitHub 拒绝访问（403），可能是令牌权限不足或请求过于频繁，稍后再试。');
+    if(!r.ok)throw new Error('检查仓库失败（'+r.status+'）');
+    const info=await r.json();
+    if(info.permissions&&!info.permissions.push)throw new Error('令牌只有读取权限。请把令牌的 Contents 权限改成 Read and write。');
+    inline(info.private?'仓库连接正常，正在同步…':'注意：这个仓库是公开的，数据会被所有人看到，建议改为 Private。正在同步…',info.private?'':'err');
+    await sync(true);
+    if(syncMsg.cls==='err')inline('同步失败：'+syncMsg.t,'err');
+    else inline((info.private?'':'（仓库是公开的）')+'同步完成。之后的修改会自动同步。','ok');
+  }catch(e){inline(e.message==='Failed to fetch'?'无法连接 GitHub，请检查网络。':e.message,'err');}
+  btn.disabled=false;
 }
 function setSync(t,cls){syncMsg={t,cls};const el=$('#syncStatus');if(el){el.textContent=t;el.className='pill '+(cls==='ok'?'ok':cls==='err'?'warn':cls==='warn'?'amber':'');}}
 window.addEventListener('online',()=>sync());
@@ -559,11 +582,12 @@ function vSearch(){
 function vSettings(){
   let h=head('设置与同步');
   h+=`<section class="card"><h2>GitHub 私有仓库</h2><div class="grid">
-    <label class="f" for="g_owner">用户名<input id="g_owner" data-cfg="owner" value="${esc(cfg.owner||'')}" placeholder="garywgh"></label>
-    <label class="f" for="g_repo">数据仓库名<input id="g_repo" data-cfg="repo" value="${esc(cfg.repo||'')}" placeholder="lab-data"></label>
-    <label class="f" for="g_branch">分支<input id="g_branch" data-cfg="branch" value="${esc(cfg.branch||'main')}"></label>
-    <label class="f full" for="g_token">访问令牌（只授权这一个仓库的 Contents 读写）<input id="g_token" type="password" data-cfg="token" value="${esc(cfg.token||'')}" autocomplete="off"></label>
+    <label class="f" for="g_owner">GitHub 用户名<input id="g_owner" data-cfg="owner" value="${esc(cfg.owner||'')}" placeholder="（必填）" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    <label class="f" for="g_repo">数据仓库名<input id="g_repo" data-cfg="repo" value="${esc(cfg.repo||'')}" placeholder="（必填）" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    <label class="f" for="g_branch">分支<input id="g_branch" data-cfg="branch" value="${esc(cfg.branch||'main')}" autocapitalize="off"></label>
+    <label class="f full" for="g_token">访问令牌（只授权这一个仓库的 Contents 读写）<input id="g_token" type="password" data-cfg="token" value="${esc(cfg.token||'')}" autocomplete="off" placeholder="（必填）github_pat_ 开头"></label>
   </div><div class="row" style="margin-top:10px"><button data-act="syncNow">保存并同步</button><span class="muted small">${meta.lastSync?'上次同步 '+shortDate(meta.lastSync):'尚未同步'}</span></div>
+  <div id="syncInline" class="small" style="margin-top:8px" aria-live="polite"></div>
   <div class="note" style="margin-top:12px">
    <b>第一次设置</b><br>
    1. 在 GitHub 新建一个 <b>Private</b> 仓库（例如 lab-data），勾选 “Add a README”。<br>
@@ -634,7 +658,7 @@ app.addEventListener('click',ev=>{
   if(act==='ideaToExp'){const l=db.logs[b.dataset.id];const id=nextId('experiments','E',false,3);put('experiments',{id,projectId:l.projectId||'',title:l.text.split('\n')[0].slice(0,40),question:l.text,status:'计划',p:'',days:'',handsOn:''});l.ideaStatus='已转实验';l.toExp=id;touch('logs',l.id);location.hash='#/exp/'+id;return;}
   if(act==='ideaDrop'){const l=db.logs[b.dataset.id];l.ideaStatus='放弃';touch('logs',l.id);render();return;}
   if(act==='newReview'){const id='RV-'+b.dataset.end;put('reviews',{id,start:b.dataset.start,end:b.dataset.end,findings:'',insights:'',progress:'',next:'',followed:''});render();return;}
-  if(act==='syncNow'){sync(true).then(render);return;}
+  if(act==='syncNow'){connectAndSync(b);return;}
   if(act==='export'){const blob=new Blob([JSON.stringify({app:'labnote',exported:now(),data:db},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='labnote-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);return;}
 });
 $('#viewer').addEventListener('click',()=>{$('#viewer').hidden=true;});
