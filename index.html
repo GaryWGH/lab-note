@@ -3,328 +3,647 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>PEDOT 墨水实验记录</title>
+<meta name="theme-color" content="#1f3b8a">
+<title>实验记录本</title>
 <style>
-/* Layout: phone-first lab notebook — experiment switcher, run header, recipe, group tabs, steps, data grid, summary */
+/* Layout: phone-first notebook. Fixed bottom nav; single column of cards; tables scroll inside their own box. */
 :root{
-  --bg:#eef0f3; --paper:#fbfcfd; --ink:#18202c; --muted:#5e6877; --rule:#d6dbe3;
-  --accent:#22408f; --accent-soft:#e3e9f7; --done:#2f7a52; --warn:#9a3b2e; --warn-soft:#f8e4e0; --pass:#2f7a52; --pass-soft:#e2f2e9;
+  --bg:#eef0f4; --paper:#fbfcfd; --ink:#18202c; --muted:#5d6777; --rule:#d6dbe3; --soft:#e5e9f0;
+  --accent:#1f3b8a; --accent-soft:#e2e8f6; --ok:#2c7650; --ok-soft:#e0f1e7; --warn:#9a3b2e; --warn-soft:#f7e3df; --amber:#8a5a00; --amber-soft:#f8eed9;
   --f-body:"PingFang SC","Noto Sans SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
   --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#11161f; --paper:#18202c; --ink:#e3e8ef; --muted:#97a2b3; --rule:#2c3646;
-  --accent:#8fa9ee; --accent-soft:#1f2b47; --done:#6cc396; --warn:#ef9a8a; --warn-soft:#3b2220; --pass:#6cc396; --pass-soft:#1b3326; color-scheme:dark}}
+  --bg:#10151d; --paper:#171f2b; --ink:#e3e8ef; --muted:#97a2b3; --rule:#2b3545; --soft:#202a39;
+  --accent:#8fa9ee; --accent-soft:#1e2a46; --ok:#6cc396; --ok-soft:#183326; --warn:#ef9a8a; --warn-soft:#3a2220; --amber:#e3b25c; --amber-soft:#33291a; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding:max(20px,env(safe-area-inset-top)) 16px 48px}
-.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-h1{font-size:1.45rem;margin:0;line-height:1.25}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding:max(14px,env(safe-area-inset-top)) 16px calc(84px + env(safe-area-inset-bottom))}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.35rem;margin:0;line-height:1.3}
 h2{font-size:1rem;margin:0 0 10px}
-.sub{color:var(--muted);font-size:.86rem;margin:4px 0 0}
-.card{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:16px;min-width:0}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+h3{font-size:.92rem;margin:0 0 8px;color:var(--muted);font-weight:600}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+.muted{color:var(--muted)} .small{font-size:.82rem} .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 select,input,textarea,button{font:inherit;color:var(--ink)}
-input,select,textarea{background:var(--bg);border:1px solid var(--rule);border-radius:7px;padding:6px 9px;min-width:0}
+input,select,textarea{background:var(--bg);border:1px solid var(--rule);border-radius:7px;padding:6px 9px;min-width:0;width:100%}
+textarea{min-height:72px;resize:vertical}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-button{cursor:pointer;border-radius:7px;padding:7px 12px;border:1px solid var(--accent);background:var(--accent);color:var(--paper);font-weight:500}
-button.ghost{background:transparent;color:var(--accent)}
-.seg{display:flex;border:1px solid var(--accent);border-radius:8px;overflow:hidden}
-.seg button{border:0;border-radius:0;flex:1;background:transparent;color:var(--accent)}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--paper)}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
-.f{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted)}
+button,.btn{cursor:pointer;border-radius:7px;padding:7px 12px;border:1px solid var(--accent);background:var(--accent);color:var(--paper);font-weight:500;display:inline-block}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent)}
+button.danger{background:transparent;color:var(--warn);border-color:var(--warn)}
+button.sm{padding:3px 9px;font-size:.82rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.f{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted);min-width:0}
+.f.full{grid-column:1/-1}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.86rem}
-th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule);white-space:nowrap;vertical-align:top}
 th{font-weight:500;color:var(--muted);font-size:.76rem}
 td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-.callout{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:.86rem;margin:12px 0 0}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
-.tab{flex:0 0 auto;background:var(--paper);color:var(--ink);border:1px solid var(--rule);display:flex;gap:7px;align-items:center}
-.tab[aria-selected="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
-.tab .pc{font-family:var(--f-mono);font-size:.74rem;opacity:.8}
-.gnote{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 11px;font-size:.84rem;margin-bottom:12px}
-.target{font-family:var(--f-mono);font-size:.86rem;color:var(--muted);margin-bottom:10px}
+td.wrap{white-space:normal;min-width:180px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:99px;padding:3px 11px;font-size:.84rem;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.pill{display:inline-block;padding:0 8px;border-radius:99px;font-size:.76rem;font-weight:500;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.amber{background:var(--amber-soft);color:var(--amber)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.list{display:flex;flex-direction:column}
+.item{display:block;padding:10px 0;border-top:1px solid var(--rule);color:var(--ink)}
+.item:first-child{border-top:0}
+.item .t{font-weight:500}
+.item .meta{font-size:.8rem;color:var(--muted)}
+.banner{background:var(--amber-soft);color:var(--amber);border-radius:8px;padding:9px 12px;font-size:.86rem}
+.note{background:var(--accent-soft);border-radius:8px;padding:9px 12px;font-size:.85rem}
 .steps{list-style:none;margin:0;padding:0}
-.step{display:grid;grid-template-columns:28px 1fr;gap:4px 10px;padding:12px 0;border-top:1px solid var(--rule)}
+.step{display:grid;grid-template-columns:26px 1fr;gap:3px 10px;padding:10px 0;border-top:1px solid var(--rule)}
 .step:first-child{border-top:0}
-.step input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--done)}
-.step .t{font-weight:500}
-.step.done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--done)}
-.step .d{grid-column:2;font-size:.83rem;color:var(--muted)}
-.fields{grid-column:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:6px}
-.calc{grid-column:2;font-family:var(--f-mono);color:var(--accent);font-size:.9rem}
-.rgrid input{width:100%;min-width:64px;padding:5px 6px;text-align:right}
-.rgrid td{padding:4px}
+.step input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ok)}
+.step .tt{font-weight:500}
+.step.done .tt{color:var(--muted);text-decoration:line-through}
+.step .d,.step .fs{grid-column:2}
+.step .d{font-size:.82rem;color:var(--muted)}
+.step .fs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:4px}
+.calc{font-family:var(--f-mono);color:var(--accent);font-size:.9rem}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos img{width:88px;height:88px;object-fit:cover;border-radius:7px;border:1px solid var(--rule);background:var(--soft)}
+.photos .ph{width:88px;height:88px;border-radius:7px;border:1px dashed var(--rule);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted)}
+.rgrid input{min-width:62px;padding:4px 6px;text-align:right;font-family:var(--f-mono)}
+.rgrid td{padding:3px}
 .rgrid tfoot td{font-family:var(--f-mono);font-size:.8rem;color:var(--accent)}
-textarea{width:100%;min-height:80px;resize:vertical}
-.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.78rem;font-weight:500}
-.pill.ok{background:var(--pass-soft);color:var(--pass)} .pill.no{background:var(--warn-soft);color:var(--warn)} .pill.na{background:var(--bg);color:var(--muted)}
-.empty{text-align:center;padding:28px 12px;color:var(--muted)}
-.foot{font-size:.78rem;color:var(--muted)}
-.status{font-size:.78rem;color:var(--muted);font-family:var(--f-mono)}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--rule);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:10}
+nav.bottom a{flex:1;text-align:center;padding:6px 2px;border-radius:8px;color:var(--muted);font-size:.86rem;font-weight:500}
+nav.bottom a[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+.timer{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--rule)}
+.timer:first-child{border-top:0}
+.lam{font-family:var(--f-mono);font-size:.82rem}
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.viewer img{max-width:100%;max-height:100%;border-radius:6px}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>PEDOT 墨水实验记录</h1>
-    <p class="sub">数据只保存在本设备的浏览器里。定期点底部“导出备份”，换设备或清理浏览器前务必先导出。</p>
-  </header>
-
-  <div class="seg" role="group" aria-label="选择实验">
-    <button type="button" data-exp="il" aria-pressed="true">离子液体筛选</button>
-    <button type="button" data-exp="fe">Fe³⁺ 交联</button>
-  </div>
-
-  <section class="card">
-    <div class="row">
-      <select id="run" style="flex:1 1 200px" aria-label="实验轮次"></select>
-      <button id="newRunBtn" class="ghost" type="button">新建一轮</button>
-      <span id="status" class="status"></span>
-    </div>
-    <form id="newRunForm" class="grid2" hidden>
-      <label class="f" for="nr-name">名称<input id="nr-name" required></label>
-      <label class="f" for="nr-date">日期<input id="nr-date" type="date"></label>
-      <div class="row"><button type="submit">创建</button><button type="button" class="ghost" id="nr-cancel">取消</button></div>
-    </form>
-    <div class="grid2" id="runMeta"></div>
-  </section>
-
-  <section class="card"><h2 id="recipeTitle"></h2><div class="target" id="recipeLine"></div><div class="tablewrap"><table id="recipe"></table></div><p class="callout" id="recipeNote"></p></section>
-
-  <div class="tabs" role="tablist" id="tabs"></div>
-  <section class="card" id="panel"></section>
-
-  <section class="card"><h2>组间对比</h2><div class="tablewrap"><table id="summary"></table></div><p class="foot" id="summaryNote" style="margin:10px 0 0"></p></section>
-
-  <section class="card"><h2>本轮备注</h2><textarea id="runNote" aria-label="本轮备注"></textarea></section>
-
-  <section class="card">
-    <h2>数据备份</h2>
-    <div class="row">
-      <button type="button" id="expJson">导出备份 (JSON)</button>
-      <button type="button" class="ghost" id="expCsv">导出本实验表格 (CSV)</button>
-      <label class="ghost" style="cursor:pointer;color:var(--accent);font-weight:500;padding:7px 12px;border:1px solid var(--accent);border-radius:7px" for="impFile">导入备份</label>
-      <input type="file" id="impFile" accept=".json,application/json" hidden>
-    </div>
-    <p class="foot" style="margin:10px 0 0">JSON 备份包含两个实验的全部数据，可以发给 Claude 分析，或导入到另一台设备。导入会覆盖本设备当前数据。</p>
-  </section>
-</div>
+<div class="wrap" id="app"></div>
+<nav class="bottom" id="nav">
+  <a href="#/" data-nav="">今天</a>
+  <a href="#/exps" data-nav="exps">实验</a>
+  <a href="#/samples" data-nav="samples">样品</a>
+  <a href="#/review" data-nav="review">回顾</a>
+  <a href="#/more" data-nav="more">更多</a>
+</nav>
+<div class="viewer" id="viewer" hidden></div>
+<input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
 
 <script>
 (function(){
-// ---------- experiment definitions ----------
-const PAPER_MMOL_PER_G = 300/226.1/20;      // EMIM:TCB, Oh et al. 2024: 2:1:0.03 wt
-const SULF_MMOL_PER_G = 0.89/20;            // estimate: PH1000 ~1.1 wt% solids, PEDOT:PSS 1:2.5, PSS unit 184 g/mol
-const IL = {
-  title:'配方（PEDOT:PSS 溶液 20 g 基准）',
-  groups:[
-    {id:'li15',name:'LiTFSI 1.5 当量',mw:287.1,mmolPerG:PAPER_MMOL_PER_G,note:'主线。剂量等于原文 EMIM:TCB 的摩尔数，约为磺酸根的 1.5 倍。LiTFSI 吸湿性强，先干燥，快速称量。'},
-    {id:'li30',name:'LiTFSI 3 当量',mw:287.1,mmolPerG:PAPER_MMOL_PER_G*2,note:'条件组：只有 1.5 当量组离心后上清液仍然很蓝时才做。'},
-    {id:'tcb',name:'EMIM:TCB',mw:226.1,mmolPerG:PAPER_MMOL_PER_G,note:'原文体系。买得到才做，作为参照。'}
-  ],
-  steps:[
-    {id:'s1',t:'称量 PEDOT:PSS 溶液',d:'记录批号。',f:[['m_pedot','实际质量 (g)','num']]},
-    {id:'s2',t:'加去离子水（PEDOT:PSS 质量的一半）',f:[['m_water','实际质量 (g)','num']]},
-    {id:'s3',t:'加入添加剂',d:'按上方目标量称量。',f:[['m_add','实际质量 (mg)','num'],['dissolve','溶解状态','sel:完全溶解|轻微浑浊|可见油滴']]},
-    {id:'s4',t:'搅拌 900 rpm ≥ 12 h',f:[['pH','混合后 pH','num']]},
-    {id:'s5',t:'液氮 10 min，冻干 72 h',f:[]},
-    {id:'s6',t:'冻干物剪碎 + 10 mL 水，尖端超声 2 h（30%）',f:[['m_fd','冻干物用量 (mg)','num']]},
-    {id:'s7',t:'加 Tween 80 30 mg，超声 3 min（20%）',f:[]},
-    {id:'s8',t:'离心 45 min',d:'记录 RCF，不要只记转速。',f:[['rcf','RCF (g)','num']]},
-    {id:'s9',t:'观察上清液',d:'拍照留档。若 1.5 当量组仍是“蓝 / 深蓝”，再做 3 当量组。',f:[['sup','上清颜色','sel:无色|浅蓝|蓝|深蓝']]},
-    {id:'s10',t:'倒上清、补 10 mL 水、混匀、同条件再离心',f:[]},
-    {id:'s11',t:'沉淀称干重',d:'取一份烘干。',f:[['dry','干重 (mg)','num']],calc:'yield'},
-    {id:'s12',t:'挤出测试',d:'针头内径和气压记在备注里。',f:[['ext','挤出表现','sel:可挤出且保形|可挤出但塌陷|难以挤出']]},
-    {id:'s13',t:'涂膜测电导（可选）',f:[['thick','膜厚 (µm)','num'],['rs','方阻 (Ω/sq)','num']],calc:'sigma'}
-  ]
-};
-const FE = {
-  title:'溶液配制',
-  groups:[
-    {id:'fe10',name:'FeCl₃ 10 mM',mM:10,n:5,note:'低浓度：掺杂少。两档都达标时优先选这一档。'},
-    {id:'fe100',name:'FeCl₃ 100 mM',mM:100,n:5,note:'高浓度：交联更充分，注意变色和开裂。'},
-    {id:'ref',name:'参考线（不处理）',mM:0,n:2,note:'同批打印、不浸泡，只用于判断不达标时是交联不够还是墨水本身的问题。'}
-  ],
-  cols:[['R0','R₀ 处理前'],['R1','R₁ 处理后'],['Rd','R 第 3–7 天'],['Rw','R 泡水 1 h'],['Rig','R 凝胶 24 h']],
-  steps:[
-    {id:'s1',t:'同批打印全部电阻线并干燥',d:'所有组同一批墨水、同一针头和程序，打印后随机分组。',f:[['print','打印参数','text']]},
-    {id:'s2',t:'测 R₀',f:[]},
-    {id:'s3',t:'配 FeCl₃ 溶液并测 pH',d:'不要调 pH：pH 高于约 2–3 会生成氢氧化铁沉淀。现配现用。',f:[['m_salt','实际称量 (mg)','num'],['pH','实测 pH','num']],soak:true},
-    {id:'s4',t:'浸泡',f:[['t_soak','时间 (min)','num']],soak:true},
-    {id:'s5',t:'去离子水漂洗 3 × 30 s，干燥',f:[],soak:true},
-    {id:'s6',t:'测 R₁（掺杂效应）',f:[]},
-    {id:'s7',t:'放置 3–7 天后测干态阻值',d:'检查掺杂是否随时间回落。',f:[['days','间隔天数','num']]},
-    {id:'s8',t:'泡去离子水 1 h，擦干立即测',f:[]},
-    {id:'s9',t:'重新干燥后贴离子凝胶 24 h，揭下立即测',f:[['gel','凝胶批次','text']]},
-    {id:'s10',t:'外观检查',f:[['color','颜色','sel:无变化|轻微发黄|明显黄棕'],['crack','开裂 / 脱落','sel:无|边缘少量|明显开裂|脱落']]}
-  ]
-};
-const EXPS={il:IL,fe:FE};
+'use strict';
+/* ================= constants ================= */
+const LS_DB='labnote-db-v1', LS_META='labnote-meta-v1', LS_CFG='labnote-gh-v1';
+const COLLS=['projects','experiments','samples','measurements','logs','reviews'];
+const LOG_KINDS=['记录','想法','意外发现','问题','计时'];
+const EXP_STATUS=['计划','进行中','等待结果','完成','放弃'];
+const P_BUCKETS=[['0.95','95% 很有把握'],['0.9','90% 只怕意外'],['0.65','65% 能看到路径'],['0.3','30% 路径模糊']];
+const FAIL_LAYERS=['材料','工艺','结构/设计','测量','环境','未知'];
+const EVIDENCE=['已实测','部分实测','推断','文献'];
+const SAMPLE_TYPES=['墨水/浆料','溶液','薄膜','打印线/电阻','器件','凝胶','其他'];
+const SAMPLE_STATUS=['计划','制备中','可用','已用完','失败'];
 
-// ---------- storage ----------
-const KEY='pedot-labnb-v1';
-let store;
-function blank(){return {il:{runs:[],entries:{},cur:null},fe:{runs:[],entries:{},cur:null}};}
-try{store=JSON.parse(localStorage.getItem(KEY))||blank();}catch(e){store=blank();}
-let exp='il', active=null, saveTimer=null;
-const $=s=>document.querySelector(s);
-function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(store));$('#status').textContent='已保存到本机';}catch(e){$('#status').textContent='保存失败：浏览器禁止本地存储，请尽快导出';}},300);}
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* process templates (v1: built in) */
+const PT={
+  none:{name:'不使用流程单',steps:[]},
+  pilc:{name:'PILC 墨水制备（Oh 2024 流程）',steps:[
+    {t:'称量 PEDOT:PSS 溶液',f:[['m_pedot','实际质量 (g)','num'],['lot_pedot','批号','text']]},
+    {t:'加去离子水（PEDOT:PSS 质量的一半）',f:[['m_water','实际质量 (g)','num']]},
+    {t:'加入添加剂',d:'按实验方案的目标量称量；吸湿试剂先干燥。',f:[['m_add','实际质量 (mg)','num'],['dissolve','溶解状态','sel:完全溶解|轻微浑浊|可见油滴']]},
+    {t:'搅拌 900 rpm ≥ 12 h',f:[['pH','混合后 pH','num']]},
+    {t:'液氮 10 min，冻干 72 h',d:'可在“今天”里加一个计时提醒。',f:[]},
+    {t:'冻干物剪碎 + 10 mL 水，尖端超声 2 h（30%）',f:[['m_fd','冻干物用量 (mg)','num']]},
+    {t:'加 Tween 80 30 mg，超声 3 min（20%）',f:[]},
+    {t:'离心 45 min，倒上清',d:'记录 RCF，不要只记转速。',f:[['rcf','RCF (g)','num']]},
+    {t:'补 10 mL 水、混匀、同条件再离心，取沉淀',f:[]}
+  ]},
+  fesoak:{name:'Fe³⁺ 浸泡交联（打印电阻）',steps:[
+    {t:'同批打印并干燥',d:'所有组同一批墨水、同一针头和程序，打印后随机分组。',f:[['print','打印参数','text']]},
+    {t:'测处理前阻值 R₀（记在“阻值稳定性”测量里）',f:[]},
+    {t:'配 FeCl₃ 溶液并测 pH',d:'不要调 pH：高于约 2–3 会生成氢氧化铁沉淀。现配现用。',f:[['conc','浓度 (mM)','num'],['m_salt','称量 (mg)','num'],['pH','实测 pH','num']]},
+    {t:'浸泡',f:[['t_soak','时间 (min)','num']]},
+    {t:'去离子水漂洗 3 × 30 s，干燥',f:[['dry','干燥条件','text']]}
+  ]},
+  print:{name:'DIW 打印',steps:[
+    {t:'墨水准备与脱泡',f:[['ink','墨水样品号','text']]},
+    {t:'设置打印参数',f:[['nozzle','针头内径 (µm)','num'],['pressure','气压 (kPa)','num'],['speed','速度 (mm/s)','num'],['layers','层数','num']]},
+    {t:'打印',f:[['substrate','基底','text']]},
+    {t:'干燥 / 后处理',f:[['post','条件','text']]}
+  ]}
+};
+/* measurement templates */
+const MT={
+  sep:{name:'离心分相评估',fields:[['sup','上清颜色','sel:无色|浅蓝|蓝|深蓝'],['m_fd','冻干物用量 (mg)','num'],['dry','沉淀干重 (mg)','num'],['ext','挤出表现','sel:可挤出且保形|可挤出但塌陷|难以挤出']],calcs:['yield']},
+  fourpp:{name:'四探针电导',fields:[['thick','膜厚 (µm)','num'],['rs','方阻 (Ω/sq)','num']],calcs:['sigma']},
+  rstab:{name:'阻值稳定性',fields:[['nrows','电阻线条数','num'],['unit','阻值单位','text'],['critD','验收 |ΔR| ≤ (%)','num'],['critCV','验收 CV ≤ (%)','num']],
+    table:{cols:[['R0','R₀ 处理前'],['R1','R₁ 处理后'],['Rd','第 3–7 天'],['Rw','泡水 1 h'],['Rig','凝胶 24 h']]},calcs:['stab'],
+    defaults:{nrows:'5',unit:'kΩ',critD:'5',critCV:'10'}},
+  oect:{name:'OECT 转移特性',fields:[['W','沟道宽 W (µm)','num'],['L','沟道长 L (µm)','num'],['d','沟道厚 d (nm)','num'],['electrolyte','电解质','text'],['gate','栅极','text'],['VD','V_D (V)','num'],['VG','V_G 扫描范围','text'],['gm','g_m 最大 (mS)','num'],['VGgm','g_m 最大处 V_G (V)','num'],['Vth','V_th (V)','num'],['onoff','开关比','text'],['tau','响应时间 τ (ms)','num'],['raw','原始数据文件','text']],calcs:['muc']},
+  rheo:{name:'流变',fields:[['ty','屈服应力 (Pa)','num'],['Gp','储能模量 G′ (Pa)','num'],['eta','黏度 @0.1 s⁻¹ (Pa·s)','num'],['geo','测试条件','text']]},
+  generic:{name:'通用测量',fields:[['what','测量项目','text'],['value','数值','num'],['unit','单位','text'],['method','方法 / 仪器','text']]}
+};
 const num=v=>{const x=parseFloat(v);return isFinite(x)?x:null;};
-const fmt=(x,d)=>(x==null||!isFinite(x))?'—':x.toFixed(d);
-const sgn=(x,d)=>(x==null||!isFinite(x))?'—':(x>0?'+':'')+x.toFixed(d)+' %';
-const S=()=>store[exp], E=()=>EXPS[exp];
-const run=()=>S().runs.find(r=>r.id===S().cur)||null;
-function entry(gid){const k=S().cur+'--'+gid;if(!S().entries[k])S().entries[k]={steps:{},v:{},notes:''};return S().entries[k];}
-function grp(gid){return E().groups.find(g=>g.id===gid);}
+const CALC={
+  yield:v=>{const d=num(v.dry),m=num(v.m_fd);return {label:'沉淀收率',text:d!=null&&m?fmt(d/m*100,1)+' %':'—'};},
+  sigma:v=>{const t=num(v.thick),r=num(v.rs);return {label:'电导率 σ',text:t&&r?fmt(1/(r*t*1e-4),1)+' S/cm':'—'};},
+  muc:v=>{const gm=num(v.gm),L=num(v.L),W=num(v.W),d=num(v.d),vt=num(v.Vth),vg=num(v.VGgm);
+    if(gm==null||!L||!W||!d||vt==null||vg==null||vt===vg)return {label:'μC* 单点估算',text:'—'};
+    const x=(gm*1e-3)*(L*1e-4)/((W*1e-4)*(d*1e-7)*Math.abs(vt-vg));return {label:'μC* 单点估算',text:fmt(x,1)+' F cm⁻¹ V⁻¹ s⁻¹',note:'正式数值应按 Inal 2017 对多组 W·d/L 线性拟合。'};}
+};
 
-// ---------- calculations ----------
-function ilYield(v){const d=num(v.dry),m=num(v.m_fd);return d!=null&&m?d/m*100:null;}
-function ilSigma(v){const t=num(v.thick),r=num(v.rs);return t&&r?1/(r*t*1e-4):null;}
-function feN(g){return g.n;}
-function colStats(g,v,col,base){
-  const xs=[],rel=[];
-  for(let i=1;i<=feN(g);i++){const x=num(v[col+'_'+i]),b=num(v[base+'_'+i]);if(x!=null){xs.push(x);if(b&&col!==base)rel.push((x-b)/b*100);}}
-  if(!xs.length)return {mean:null,cv:null,d:null,maxAbs:null};
-  const m=xs.reduce((a,b)=>a+b,0)/xs.length, sd=xs.length>1?Math.sqrt(xs.reduce((a,b)=>a+(b-m)**2,0)/(xs.length-1)):null;
-  return {mean:m,cv:sd!=null&&m?sd/m*100:null,d:rel.length?rel.reduce((a,b)=>a+b,0)/rel.length:null,maxAbs:rel.length?Math.max(...rel.map(Math.abs)):null};
+/* ================= utils ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fmt(x,d){return (x==null||!isFinite(x))?'—':x.toFixed(d);}
+function sgn(x,d){return (x==null||!isFinite(x))?'—':(x>0?'+':'')+x.toFixed(d)+' %';}
+const now=()=>new Date().toISOString();
+const pad=n=>String(n).padStart(2,'0');
+function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function ymd6(){const d=new Date();return String(d.getFullYear()).slice(2)+pad(d.getMonth()+1)+pad(d.getDate());}
+function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?undefined:a[k],o);}
+function setPath(o,p,v){const ks=p.split('.');let a=o;ks.slice(0,-1).forEach(k=>{if(a[k]==null||typeof a[k]!=='object')a[k]={};a=a[k];});a[ks[ks.length-1]]=v;}
+function shortDate(iso){if(!iso)return '';const d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+
+/* ================= store ================= */
+let db, meta, cfg;
+function emptyDb(){const o={version:1};COLLS.forEach(c=>o[c]={});return o;}
+function load(){
+  try{db=JSON.parse(localStorage.getItem(LS_DB));}catch(e){db=null;}
+  try{meta=JSON.parse(localStorage.getItem(LS_META))||{};}catch(e){meta={};}
+  try{cfg=JSON.parse(localStorage.getItem(LS_CFG))||{};}catch(e){cfg={};}
+  if(!db){db=emptyDb();seed();meta.dirty=true;}
+  COLLS.forEach(c=>{if(!db[c])db[c]={};});
 }
-const baseOf=c=>c==='R1'?'R0':c==='R0'?'R0':'R1';  // doping vs R0; stability vs R1
-function crit(){const r=run()||{};return {d:num(r.critD)??5,cv:num(r.critCV)??10};}
-function verdict(g){
-  const v=entry(g.id).v,c=crit(); if(g.id==='ref')return null;
-  const s1=colStats(g,v,'R1','R0'); const st=['Rd','Rw','Rig'].map(k=>colStats(g,v,k,'R1'));
-  if(s1.cv==null||st.some(s=>s.maxAbs==null))return 'na';
-  return (s1.cv<=c.cv&&st.every(s=>s.maxAbs<=c.d))?'ok':'no';
+function saveLocal(){try{localStorage.setItem(LS_DB,JSON.stringify(db));localStorage.setItem(LS_META,JSON.stringify(meta));}catch(e){setSync('本机保存失败：存储空间不足或被禁用','err');}}
+function live(c){return Object.values(db[c]).filter(r=>!r.deleted);}
+function get(c,id){const r=db[c][id];return r&&!r.deleted?r:null;}
+function put(c,r){r.updatedAt=now();if(!r.createdAt)r.createdAt=r.updatedAt;db[c][r.id]=r;changed();return r;}
+function touch(c,id){const r=db[c][id];if(r){r.updatedAt=now();changed();}}
+function remove(c,id){const r=db[c][id];if(r){r.deleted=true;r.updatedAt=now();changed();}}
+function nextId(c,prefix,daily,w){const base=daily?prefix+'-'+ymd6()+'-':prefix+'-';let n=0;Object.keys(db[c]).forEach(k=>{if(k.startsWith(base)){const x=parseInt(k.slice(base.length),10);if(x>n)n=x;}});return base+String(n+1).padStart(w||2,'0');}
+
+/* ================= seed (first run only) ================= */
+function seed(){
+  const t=now(), mk=(c,r)=>{r.createdAt=r.updatedAt=t;db[c][r.id]=r;};
+  const P=[
+    ['PJ-01','PEDOT:PSS 可打印墨水（PILC）','得到可 DIW 打印、高电导、无需后处理的 PEDOT 墨水，用于 OECT 沟道和电极。'],
+    ['PJ-02','CNT 电阻墨水','打印出阻值可预测、可重复、耐汗液/离子凝胶的电阻，作为电导权重单元。'],
+    ['PJ-03','纳米银墨水','互连、电极与栅极基底。'],
+    ['PJ-04','离子凝胶电解质','EMIM:ES + AA/AAm，解决渗液，局部薄层电解质。'],
+    ['PJ-05','OECT 器件与物理计算','统一的转移曲线、g_m、频率响应、τ，以及制造参数到功能的映射。']
+  ];
+  P.forEach(([id,name,goal])=>mk('projects',{id,name,goal,status:'进行中',next:'',outline:{intro:'',figs:[],conclusion:''}}));
+  db.projects['PJ-01'].outline.figs=[{id:'F1',title:'墨水制备与分相机理',claim:'离子液体 / 盐的阴阳离子性质决定 PEDOT:PSS 能否离心分相',status:'空'},{id:'F2',title:'流变与可打印性',claim:'',status:'空'}];
+  db.projects['PJ-02'].outline.figs=[{id:'F1',title:'几何—阻值标定与一致性',claim:'',status:'空'},{id:'F2',title:'交联后耐水 / 耐凝胶稳定性',claim:'Fe³⁺ 后浸泡使阻值在泡水和贴凝胶后保持稳定',status:'空'}];
+  mk('experiments',{id:'E-001',projectId:'PJ-01',figId:'F1',title:'LiTFSI 诱导 PEDOT:PSS 离心分相',
+    question:'硬阳离子 + 疏水软阴离子的盐能否替代 EMIM:TCB 实现分相？',
+    hypothesis:'Li⁺ 亲水、与 PSS⁻ 结合，TFSI⁻ 疏水、去掺杂 PEDOT 外壳，使 PEDOT 胶体压实沉降。',
+    plan:'LiTFSI 1.5 当量（20 g PEDOT:PSS 加 381 mg）。若上清仍蓝，再做 3 当量（762 mg）。EMIM:TCB 买得到则作参照（300 mg）。',
+    criteria:'上清液接近无色；沉淀可挤出且保形。电导率为加分项。',
+    p:'0.65',handsOn:'6',days:'6',status:'计划',result:'',evidence:'',failLayer:'',failWhy:'',actualDays:''});
+  mk('experiments',{id:'E-002',projectId:'PJ-02',figId:'F2',title:'CNT/CMC 电阻 Fe³⁺ 后浸泡交联',
+    question:'Fe³⁺ 后浸泡能否让打印电阻在泡水和贴离子凝胶后阻值稳定？',
+    hypothesis:'Fe³⁺ 与 CMC / CNT-COOH 羧酸根配位交联，抑制溶胀；但离子强度高时配位会减弱（Baretta 2024）。',
+    plan:'FeCl₃ 10 mM 与 100 mM 各 5 条，另 2 条不处理作参考。两档都达标时选 10 mM。',
+    criteria:'R₁ 的 CV ≤ 10%；第 3–7 天、泡水 1 h、凝胶 24 h 相对 R₁ 的单条 |ΔR| ≤ 5%。',
+    p:'0.65',handsOn:'4',days:'8',status:'计划',result:'',evidence:'',failLayer:'',failWhy:'',actualDays:''});
 }
 
-// ---------- render ----------
-function renderSeg(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.exp===exp));}
-function renderRuns(){
-  const s=S();
-  $('#run').innerHTML=s.runs.length?s.runs.map(r=>`<option value="${esc(r.id)}"${r.id===s.cur?' selected':''}>${esc(r.name)}${r.date?' · '+esc(r.date):''}</option>`).join(''):'<option value="">（暂无轮次）</option>';
-  const r=run(), meta=$('#runMeta');
-  if(!r){meta.innerHTML='';}
-  else if(!meta.contains(document.activeElement)){
-    const fields=exp==='il'?[['scale','PEDOT:PSS 溶液 (g)',20],['batch','PEDOT:PSS 批号','']]:[['vol','每种溶液体积 (mL)',50],['critD','验收：|ΔR| ≤ (%)',5],['critCV','验收：CV ≤ (%)',10],['ink','墨水批次 / 固含量','']];
-    meta.innerHTML=fields.map(([k,l,d])=>`<label class="f" for="m-${k}">${l}<input id="m-${k}" data-meta="${k}" class="${typeof d==='number'?'num':''}" ${typeof d==='number'?'inputmode="decimal"':''} value="${esc(r[k]??d)}"></label>`).join('');
-  }
-  const rn=$('#runNote');if(document.activeElement!==rn)rn.value=r?.note||'';rn.disabled=!r;
+/* ================= GitHub sync ================= */
+let syncTimer=null, syncing=false, syncMsg={t:'',cls:''};
+function ghReady(){return cfg.owner&&cfg.repo&&cfg.token;}
+function ghUrl(p){return 'https://api.github.com/repos/'+encodeURIComponent(cfg.owner)+'/'+encodeURIComponent(cfg.repo)+'/contents/'+p;}
+function ghHead(accept){return {'Authorization':'Bearer '+cfg.token,'Accept':accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};}
+function b64utf8(s){const b=new TextEncoder().encode(s);let out='';for(let i=0;i<b.length;i+=0x8000)out+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(out);}
+async function ghGetText(path){
+  const br=cfg.branch||'main';
+  const r=await fetch(ghUrl(path)+'?ref='+encodeURIComponent(br),{headers:ghHead()});
+  if(r.status===404)return {sha:null,text:null};
+  if(!r.ok)throw new Error('读取失败 '+r.status);
+  const j=await r.json();
+  const r2=await fetch(ghUrl(path)+'?ref='+encodeURIComponent(br),{headers:ghHead('application/vnd.github.raw+json')});
+  if(!r2.ok)throw new Error('读取失败 '+r2.status);
+  return {sha:j.sha,text:await r2.text()};
 }
-function renderRecipe(){
-  $('#recipeTitle').textContent=E().title; const r=run()||{};
-  if(exp==='il'){
-    const g=num(r.scale)||20;
-    $('#recipeLine').textContent=`PEDOT:PSS 溶液 ${fmt(g,1)} g · 水 ${fmt(g/2,1)} g · 估计磺酸根 ${fmt(SULF_MMOL_PER_G*g,2)} mmol`;
-    $('#recipe').innerHTML='<thead><tr><th>组</th><th class="n">mmol</th><th class="n">加入量 (mg)</th></tr></thead><tbody>'+IL.groups.map(x=>`<tr><td>${esc(x.name)}</td><td class="n">${fmt(x.mmolPerG*g,3)}</td><td class="n">${fmt(x.mmolPerG*g*x.mw,0)}</td></tr>`).join('')+'</tbody>';
-    $('#recipeNote').textContent='剂量依据：原文 PEDOT:PSS : 水 : EMIM:TCB = 2 : 1 : 0.03（质量比），约为磺酸根的 1.5 倍当量。磺酸根按 PH1000（固含量约 1.1 wt%，PEDOT:PSS ≈ 1:2.5）估算，换用其他型号需重算。';
-  }else{
-    const V=num(r.vol)||50;
-    $('#recipeLine').textContent=`每种溶液 ${fmt(V,0)} mL`;
-    $('#recipe').innerHTML='<thead><tr><th>组</th><th class="n">FeCl₃·6H₂O (mg)</th><th class="n">无水 FeCl₃ (mg)</th></tr></thead><tbody>'+FE.groups.filter(g=>g.mM).map(g=>{const mol=g.mM/1000*V/1000;return `<tr><td>${esc(g.name)}</td><td class="n">${fmt(mol*270.30*1000,1)}</td><td class="n">${fmt(mol*162.20*1000,1)}</td></tr>`;}).join('')+'</tbody>';
-    $('#recipeNote').textContent='判断标准：R₁ 的 CV 不超过验收值，且第 3–7 天、泡水 1 h、贴凝胶 24 h 三个时间点相对 R₁ 的最大单条变化都不超过 |ΔR| 验收值。两档都达标时选 10 mM。';
-  }
+async function ghPut(path,b64,sha,message){
+  const body={message,content:b64,branch:cfg.branch||'main'};if(sha)body.sha=sha;
+  const r=await fetch(ghUrl(path),{method:'PUT',headers:{...ghHead(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===409||r.status===422)return {conflict:true};
+  if(!r.ok)throw new Error('写入失败 '+r.status+(r.status===401||r.status===403?'（检查令牌权限）':''));
+  const j=await r.json();return {sha:j.content.sha};
 }
-const stepsFor=g=>E().steps.filter(s=>!(s.soak&&!g.mM));
-function renderTabs(){
-  const gs=E().groups; if(!gs.some(g=>g.id===active))active=gs[0].id;
-  $('#tabs').innerHTML=gs.map(g=>{const st=stepsFor(g),e=entry(g.id);return `<button type="button" role="tab" class="tab" aria-selected="${g.id===active}" data-g="${g.id}">${esc(g.name)}<span class="pc">${st.filter(s=>e.steps[s.id]).length}/${st.length}</span></button>`;}).join('');
+function merge(a,b){const out={version:1};COLLS.forEach(c=>{const x=a[c]||{},y=b[c]||{};out[c]={};new Set([...Object.keys(x),...Object.keys(y)]).forEach(k=>{const p=x[k],q=y[k];out[c][k]=!p?q:!q?p:((q.updatedAt||'')>(p.updatedAt||'')?q:p);});});return out;}
+function changed(){meta.dirty=true;saveLocal();clearTimeout(syncTimer);if(ghReady())syncTimer=setTimeout(sync,2500);setSync(ghReady()?'待同步…':'仅本机（未连接 GitHub）',ghReady()?'':'warn');}
+async function sync(manual){
+  if(!ghReady()){setSync('仅本机（未连接 GitHub）','warn');return;}
+  if(syncing){clearTimeout(syncTimer);syncTimer=setTimeout(sync,2000);return;}
+  syncing=true;setSync('同步中…','');
+  try{
+    for(let attempt=0;attempt<3;attempt++){
+      const remote=await ghGetText('db.json');
+      let rdb=null;if(remote.text){try{rdb=JSON.parse(remote.text);}catch(e){throw new Error('仓库中的 db.json 无法解析');}}
+      const merged=rdb?merge(db,rdb):db;
+      const mergedStr=JSON.stringify(merged);
+      const changedLocal=JSON.stringify(db)!==mergedStr;
+      db=merged;
+      if(!rdb||JSON.stringify(rdb)!==mergedStr){
+        const res=await ghPut('db.json',b64utf8(JSON.stringify(merged,null,1)),remote.sha,'notebook update '+new Date().toLocaleString('zh-CN'));
+        if(res.conflict)continue;
+        meta.sha=res.sha;
+      }else meta.sha=remote.sha;
+      meta.dirty=false;meta.lastSync=now();saveLocal();
+      await flushPhotos();
+      setSync('已同步 '+shortDate(meta.lastSync),'ok');
+      if(changedLocal&&!document.activeElement?.closest?.('#app'))render();
+      syncing=false;return;
+    }
+    throw new Error('多次写入冲突，请稍后再试');
+  }catch(e){setSync(String(e.message||e)+(navigator.onLine?'':'（离线，联网后自动重试）'),'err');}
+  syncing=false;
 }
-function fieldHtml(f,v){
-  const [k,label,type]=f,id=`f-${exp}-${active}-${k}`,val=v[k]??'';
-  if(type.startsWith('sel:'))return `<label class="f" for="${id}">${esc(label)}<select id="${id}" data-k="${k}"><option value=""></option>${type.slice(4).split('|').map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
-  return `<label class="f" for="${id}">${esc(label)}<input id="${id}" data-k="${k}" ${type==='num'?'inputmode="decimal" class="num"':''} value="${esc(val)}"></label>`;
-}
-function calcText(k,v){return k==='yield'?`沉淀收率 ${fmt(ilYield(v),1)} %`:k==='sigma'?`σ = ${fmt(ilSigma(v),1)} S/cm`:'';}
-function gridHtml(g,v){
-  let h='<div class="tablewrap"><table class="rgrid"><thead><tr><th>#</th>'+FE.cols.map(c=>`<th class="n">${c[1]}</th>`).join('')+'</tr></thead><tbody>';
-  for(let i=1;i<=feN(g);i++)h+=`<tr><th>${i}</th>`+FE.cols.map(([c])=>`<td><input class="num" inputmode="decimal" data-k="${c}_${i}" aria-label="线 ${i} ${c}" value="${esc(v[c+'_'+i]??'')}"></td>`).join('')+'</tr>';
-  const st=FE.cols.map(([c])=>colStats(g,v,c,baseOf(c)));
-  h+='</tbody><tfoot><tr><th>均值</th>'+st.map(s=>`<td class="n">${fmt(s.mean,s.mean!=null&&s.mean<10?3:1)}</td>`).join('')+'</tr>';
-  h+='<tr><th>CV</th>'+st.map(s=>`<td class="n">${s.cv==null?'—':fmt(s.cv,1)+' %'}</td>`).join('')+'</tr>';
-  h+='<tr><th>平均 Δ</th>'+st.map((s,j)=>`<td class="n">${j?sgn(s.d,1):''}</td>`).join('')+'</tr>';
-  h+='<tr><th>最大 |Δ|</th>'+st.map((s,j)=>`<td class="n">${j>1&&s.maxAbs!=null?fmt(s.maxAbs,1)+' %':''}</td>`).join('')+'</tr>';
-  return h+'</tfoot></table></div><p class="foot">Δ 的基准：R₁ 相对 R₀（掺杂效应）；其余三列相对 R₁（稳定性）。</p>';
-}
-function renderPanel(){
-  const p=$('#panel');
-  if(!run()){p.innerHTML='<div class="empty">还没有实验轮次。点上方“新建一轮”开始记录。</div>';return;}
-  const g=grp(active),e=entry(active);
-  let tgt='';
-  if(exp==='il'){const sc=num(run().scale)||20;tgt=`目标加入量 ${fmt(g.mmolPerG*sc*g.mw,0)} mg（${fmt(g.mmolPerG*sc,3)} mmol）`;}
-  else if(g.mM){const mol=g.mM/1000*(num(run().vol)||50)/1000;tgt=`称 FeCl₃·6H₂O ${fmt(mol*270.30*1000,1)} mg（或无水 ${fmt(mol*162.20*1000,1)} mg）`;}
-  else tgt='不浸泡';
-  let h=`<h2>${esc(g.name)}</h2><div class="gnote">${esc(g.note)}</div><div class="target">${esc(tgt)}</div><ol class="steps">`;
-  stepsFor(g).forEach(s=>{const done=!!e.steps[s.id],cid=`c-${exp}-${active}-${s.id}`;
-    h+=`<li class="step${done?' done':''}" data-s="${s.id}"><input type="checkbox" id="${cid}" ${done?'checked':''}><label class="t" for="${cid}">${esc(s.t)}</label>`;
-    if(s.d)h+=`<div class="d">${esc(s.d)}</div>`;
-    if(s.f.length)h+=`<div class="fields">${s.f.map(f=>fieldHtml(f,e.v)).join('')}</div>`;
-    if(s.calc)h+=`<div class="calc" data-calc="${s.calc}">${calcText(s.calc,e.v)}</div>`;
-    h+='</li>';});
-  h+='</ol>';
-  if(exp==='fe')h+=`<h2 style="margin-top:14px">阻值记录（单位全组统一，如 kΩ）</h2><div id="gridBox">${gridHtml(g,e.v)}</div>`;
-  h+=`<label class="f" for="notes-${exp}-${active}" style="margin-top:12px">本组观察记录<textarea id="notes-${exp}-${active}" data-notes="1">${esc(e.notes)}</textarea></label>`;
-  p.innerHTML=h;
-}
-function renderSummary(){
-  if(exp==='il'){
-    $('#summary').innerHTML='<thead><tr><th>组</th><th class="n">加入 (mg)</th><th>上清</th><th class="n">收率</th><th>挤出</th><th class="n">σ (S/cm)</th></tr></thead><tbody>'+IL.groups.map(g=>{const v=entry(g.id).v;return `<tr><td>${esc(g.name)}</td><td class="n">${esc(v.m_add||'—')}</td><td>${esc(v.sup||'—')}</td><td class="n">${ilYield(v)==null?'—':fmt(ilYield(v),1)+' %'}</td><td>${esc(v.ext||'—')}</td><td class="n">${fmt(ilSigma(v),1)}</td></tr>`;}).join('')+'</tbody>';
-    $('#summaryNote').textContent='成功标准：上清液接近无色、沉淀能挤出且保形。电导率是加分项。';
-  }else{
-    $('#summary').innerHTML='<thead><tr><th>组</th><th class="n">ΔR₁ 掺杂</th><th class="n">CV R₁</th><th class="n">3–7 天</th><th class="n">泡水</th><th class="n">凝胶</th><th>判定</th></tr></thead><tbody>'+FE.groups.map(g=>{const v=entry(g.id).v,s1=colStats(g,v,'R1','R0'),[sd,sw,sg]=['Rd','Rw','Rig'].map(k=>colStats(g,v,k,'R1')),vd=verdict(g);
-      const pill=vd==null?'<span class="pill na">参考</span>':vd==='ok'?'<span class="pill ok">达标</span>':vd==='no'?'<span class="pill no">不达标</span>':'<span class="pill na">数据未齐</span>';
-      return `<tr><td>${esc(g.name)}</td><td class="n">${sgn(s1.d,1)}</td><td class="n">${s1.cv==null?'—':fmt(s1.cv,1)+' %'}</td><td class="n">${sgn(sd.d,1)}</td><td class="n">${sgn(sw.d,1)}</td><td class="n">${sgn(sg.d,1)}</td><td>${pill}</td></tr>`;}).join('')+'</tbody>';
-    const c=crit();$('#summaryNote').textContent=`当前验收标准：单条 |ΔR| ≤ ${c.d} %，CV ≤ ${c.cv} %（可在上方修改）。表中三列稳定性数据为平均值，判定按最大单条变化。`;
-  }
-}
-function renderAll(){renderSeg();renderRuns();renderRecipe();renderTabs();renderPanel();renderSummary();}
+function setSync(t,cls){syncMsg={t,cls};const el=$('#syncStatus');if(el){el.textContent=t;el.className='pill '+(cls==='ok'?'ok':cls==='err'?'warn':cls==='warn'?'amber':'');}}
+window.addEventListener('online',()=>sync());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ghReady())sync();});
 
-// ---------- events ----------
-document.querySelector('.seg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;exp=b.dataset.exp;active=null;renderAll();});
-$('#tabs').addEventListener('click',ev=>{const b=ev.target.closest('.tab');if(!b)return;active=b.dataset.g;renderTabs();renderPanel();});
-$('#panel').addEventListener('change',ev=>{const t=ev.target;
-  if(t.type==='checkbox'){const li=t.closest('.step');entry(active).steps[li.dataset.s]=t.checked;li.classList.toggle('done',t.checked);renderTabs();save();return;}
-  if(t.tagName==='SELECT'&&t.dataset.k){entry(active).v[t.dataset.k]=t.value;renderSummary();save();}
+/* ================= photos ================= */
+let idb=null;
+function openIdb(){return new Promise(res=>{if(idb)return res(idb);try{const rq=indexedDB.open('labnote-photos',1);rq.onupgradeneeded=()=>rq.result.createObjectStore('pending',{keyPath:'path'});rq.onsuccess=()=>{idb=rq.result;res(idb);};rq.onerror=()=>res(null);}catch(e){res(null);}});}
+async function idbOp(mode,fn){const d=await openIdb();if(!d)return null;return new Promise(res=>{const tx=d.transaction('pending',mode);const st=tx.objectStore('pending');const rq=fn(st);tx.oncomplete=()=>res(rq?rq.result:null);tx.onerror=()=>res(null);});}
+const photoCache={};
+function compress(file){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const m=1600,s=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',0.82));};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('无法读取图片'));};img.src=u;});}
+let photoTarget=null;
+$('#photoInput').addEventListener('change',async ev=>{
+  const f=ev.target.files[0];ev.target.value='';if(!f||!photoTarget)return;
+  const {c,id}=photoTarget;const r=db[c][id];if(!r)return;
+  try{
+    const dataUrl=await compress(f);const path='photos/'+id+'/'+Date.now()+'.jpg';
+    photoCache[path]=dataUrl;
+    await idbOp('readwrite',st=>st.put({path,b64:dataUrl.split(',')[1]}));
+    r.photos=r.photos||[];r.photos.push(path);touch(c,id);render();
+    if(ghReady())flushPhotos();
+  }catch(e){alertBar('照片处理失败：'+e.message);}
 });
-$('#panel').addEventListener('input',ev=>{const t=ev.target,e=entry(active);
-  if(t.dataset.notes){e.notes=t.value;save();return;}
-  if(t.dataset.k&&t.tagName==='INPUT'){e.v[t.dataset.k]=t.value.trim();
-    const c=t.closest('.step')?.querySelector('[data-calc]');if(c)c.textContent=calcText(c.dataset.calc,e.v);
-    if(exp==='fe'&&t.closest('.rgrid')){const box=$('#gridBox'),tmp=document.createElement('div');tmp.innerHTML=gridHtml(grp(active),e.v);box.querySelector('tfoot').replaceWith(tmp.querySelector('tfoot'));}
-    renderSummary();save();}
-});
-$('#runMeta').addEventListener('input',ev=>{const r=run(),k=ev.target.dataset.meta;if(!r||!k)return;r[k]=ev.target.value;renderRecipe();renderSummary();if(exp==='il'){const tg=$('#panel .target');if(tg)renderPanel();}save();});
-$('#run').addEventListener('change',ev=>{S().cur=ev.target.value||null;renderAll();save();});
-$('#runNote').addEventListener('input',ev=>{const r=run();if(!r)return;r.note=ev.target.value;save();});
-$('#newRunBtn').addEventListener('click',()=>{const f=$('#newRunForm');f.hidden=!f.hidden;if(!f.hidden){$('#nr-name').value=`第 ${S().runs.length+1} 轮`;$('#nr-date').value=new Date().toISOString().slice(0,10);$('#nr-name').focus();}});
-$('#nr-cancel').addEventListener('click',()=>{$('#newRunForm').hidden=true;});
-$('#newRunForm').addEventListener('submit',ev=>{ev.preventDefault();
-  const r={id:'r'+Date.now().toString(36),name:$('#nr-name').value.trim()||'未命名',date:$('#nr-date').value,note:''};
-  S().runs.unshift(r);S().cur=r.id;$('#newRunForm').hidden=true;renderAll();save();});
+async function flushPhotos(){
+  if(!ghReady())return;const all=await idbOp('readonly',st=>st.getAll());if(!all)return;
+  for(const p of all){try{await ghPut(p.path,p.b64,null,'photo '+p.path);await idbOp('readwrite',st=>st.delete(p.path));}catch(e){break;}}
+}
+async function photoSrc(path){
+  if(photoCache[path])return photoCache[path];
+  const pend=await idbOp('readonly',st=>st.get(path));
+  if(pend){photoCache[path]='data:image/jpeg;base64,'+pend.b64;return photoCache[path];}
+  if(!ghReady())return null;
+  try{const r=await fetch(ghUrl(path)+'?ref='+encodeURIComponent(cfg.branch||'main'),{headers:ghHead('application/vnd.github.raw+json')});if(!r.ok)return null;const u=URL.createObjectURL(await r.blob());photoCache[path]=u;return u;}catch(e){return null;}
+}
+function hydratePhotos(){document.querySelectorAll('img[data-photo]').forEach(async img=>{const s=await photoSrc(img.dataset.photo);if(s)img.src=s;else img.alt='未加载';});}
+function photosBlock(c,r){
+  const ps=(r.photos||[]);
+  return `<div class="photos">${ps.map(p=>`<img data-photo="${esc(p)}" alt="照片" data-view="${esc(p)}">`).join('')}<button type="button" class="ghost sm" data-act="photo" data-c="${c}" data-id="${esc(r.id)}">+ 照片</button></div>`;
+}
 
-// ---------- export / import ----------
-function download(name,text,type){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
-const stamp=()=>new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
-$('#expJson').addEventListener('click',()=>download(`pedot-lab-backup-${stamp()}.json`,JSON.stringify({app:'pedot-labnb',version:1,exported:new Date().toISOString(),data:store},null,2),'application/json'));
-$('#expCsv').addEventListener('click',()=>{
-  const s=S(),rows=[];const keys=new Set();
-  s.runs.forEach(r=>E().groups.forEach(g=>{const e=s.entries[r.id+'--'+g.id];if(!e)return;Object.keys(e.v).forEach(k=>keys.add(k));}));
-  const kl=[...keys].sort();rows.push(['run','date','group',...kl,'notes']);
-  s.runs.forEach(r=>E().groups.forEach(g=>{const e=s.entries[r.id+'--'+g.id];if(!e)return;rows.push([r.name,r.date||'',g.name,...kl.map(k=>e.v[k]??''),e.notes||'']);}));
-  const csv='﻿'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-  download(`pedot-${exp}-${stamp()}.csv`,csv,'text/csv');
-});
-$('#impFile').addEventListener('change',ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
-  rd.onload=()=>{try{const o=JSON.parse(rd.result);const d=o.data||o;if(!d.il||!d.fe)throw 0;store=d;active=null;renderAll();save();$('#status').textContent='已导入备份';}catch(e){$('#status').textContent='导入失败：不是本页面导出的备份文件';}ev.target.value='';};
-  rd.readAsText(f);});
+/* ================= form helpers ================= */
+function field(c,id,path,label,type,val,opts){
+  const fid='f_'+(c+id+path).replace(/[^\w]/g,'_');const b=`data-b="${c}|${esc(id)}|${path}"`;const full=opts&&opts.full?' full':'';const rr=opts&&opts.r?` data-r="${opts.r}"`:'';
+  if(type.startsWith('sel:')){const o=type.slice(4).split('|');return `<label class="f${full}" for="${fid}">${esc(label)}<select id="${fid}" ${b}${rr}><option value=""></option>${o.map(x=>{const [v,l]=x.split('::');return `<option value="${esc(v)}"${v===String(val??'')?' selected':''}>${esc(l||v)}</option>`;}).join('')}</select></label>`;}
+  if(type==='area')return `<label class="f${full||' full'}" for="${fid}">${esc(label)}<textarea id="${fid}" ${b}${rr}>${esc(val)}</textarea></label>`;
+  if(type==='date'||type==='datetime-local')return `<label class="f${full}" for="${fid}">${esc(label)}<input id="${fid}" type="${type}" ${b}${rr} value="${esc(val)}"></label>`;
+  return `<label class="f${full}" for="${fid}">${esc(label)}<input id="${fid}" ${b}${rr} ${type==='num'?'inputmode="decimal" class="mono"':''} value="${esc(val)}"></label>`;
+}
+const optsOf=(arr)=>'sel:'+arr.join('|');
+const projOpts=()=>'sel:'+live('projects').sort((a,b)=>a.id<b.id?-1:1).map(p=>p.id+'::'+p.name).join('|');
+const expOpts=()=>'sel:'+live('experiments').sort((a,b)=>a.id<b.id?-1:1).map(e=>e.id+'::'+e.id+' '+e.title).join('|');
+function pill(s){const m={'进行中':'acc','等待结果':'amber','完成':'ok','放弃':'warn','计划':'','可用':'ok','失败':'warn','制备中':'acc','已用完':''};return `<span class="pill ${m[s]||''}">${esc(s||'—')}</span>`;}
+function lam(e){const p=num(e.p),d=num(e.days);if(!p||!d||p>=1)return null;return Math.log(1/p)/d;}
 
-renderAll();
+/* ================= views ================= */
+let regions={};
+function head(title,sub,right){return `<header class="row between"><div style="min-width:0"><h1>${title}</h1>${sub?`<div class="muted small">${sub}</div>`:''}</div><div class="row">${right||''}<span id="syncStatus" class="pill"></span></div></header>`;}
+
+function vToday(){
+  const L=live('logs');
+  const timers=L.filter(l=>l.kind==='计时'&&!l.done&&l.due).sort((a,b)=>a.due<b.due?-1:1);
+  const todays=L.filter(l=>l.date===today()&&l.kind!=='计时').sort((a,b)=>a.createdAt<b.createdAt?1:-1);
+  const queue=live('experiments').filter(e=>['计划','进行中'].includes(e.status)).map(e=>({e,l:lam(e)})).sort((a,b)=>(b.l??-1)-(a.l??-1)).slice(0,3);
+  const draft=window.__draft||(window.__draft={kind:'记录',text:'',projectId:'',experimentId:'',hours:'',rh:'',temp:'',due:''});
+  let h=head('今天',today());
+  if(!ghReady())h+=`<div class="banner">数据目前只保存在本机。到 <a href="#/settings">设置</a> 连接 GitHub 私有仓库后，手机和电脑会自动同步，照片也能保存。</div>`;
+  h+=`<section class="card"><h2>记一笔</h2>
+   <div class="chips" id="kindChips">${LOG_KINDS.map(k=>`<button type="button" class="chip" data-kind="${k}" aria-pressed="${draft.kind===k}">${k}</button>`).join('')}</div>
+   <div class="grid" style="margin-top:10px">
+    <label class="f full" for="d_text">内容<textarea id="d_text" data-draft="text" placeholder="做了什么、看到什么、想到什么……">${esc(draft.text)}</textarea></label>
+    <label class="f" for="d_proj">项目<select id="d_proj" data-draft="projectId"><option value=""></option>${live('projects').map(p=>`<option value="${p.id}"${draft.projectId===p.id?' selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
+    <label class="f" for="d_exp">实验<select id="d_exp" data-draft="experimentId"><option value=""></option>${live('experiments').map(e=>`<option value="${e.id}"${draft.experimentId===e.id?' selected':''}>${esc(e.id+' '+e.title)}</option>`).join('')}</select></label>
+    ${draft.kind==='计时'?`<label class="f" for="d_due">到期时间<input id="d_due" type="datetime-local" data-draft="due" value="${esc(draft.due)}"></label>`:`<label class="f" for="d_hours">动手时间 (h)<input id="d_hours" class="mono" inputmode="decimal" data-draft="hours" value="${esc(draft.hours)}"></label>`}
+    <label class="f" for="d_rh">湿度 (%RH)<input id="d_rh" class="mono" inputmode="decimal" data-draft="rh" value="${esc(draft.rh)}"></label>
+    <label class="f" for="d_t">温度 (°C)<input id="d_t" class="mono" inputmode="decimal" data-draft="temp" value="${esc(draft.temp)}"></label>
+   </div>
+   <div class="row" style="margin-top:10px"><button type="button" data-act="addLog">保存</button><span class="muted small">保存后可在记录里加照片</span></div>
+  </section>`;
+  if(timers.length)h+=`<section class="card"><h2>等待中</h2>${timers.map(t=>{const ms=new Date(t.due)-Date.now();const left=ms<=0?'<span class="pill warn">已到时间</span>':`<span class="pill amber">${ms>864e5?Math.floor(ms/864e5)+' 天 ':''}${Math.floor(ms%864e5/36e5)} 小时后</span>`;return `<div class="timer"><div><div>${esc(t.text||'计时')}</div><div class="muted small">${t.experimentId?esc(t.experimentId)+' · ':''}到期 ${esc(t.due.replace('T',' '))}</div></div><div class="row">${left}<button class="ghost sm" data-act="timerDone" data-id="${t.id}">完成</button></div></div>`;}).join('')}</section>`;
+  h+=`<section class="card"><div class="row between"><h2>实验队列</h2><a class="small" href="#/exps">全部</a></div>${queue.length?`<div class="list">${queue.map(({e,l})=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">λ = ${l==null?'未估计':fmt(l,3)+' /天'} · 成功率 ${e.p?Math.round(e.p*100)+'%':'—'} · ${e.days||'—'} 天</div></a>`).join('')}</div>`:'<div class="muted small">没有计划中的实验。</div>'}<p class="muted small" style="margin:8px 0 0">按 λ = ln(1/成功率) ÷ 日历天数 排序：单位时间里最可能暴露失败的实验排前面（Steinhardt）。</p></section>`;
+  h+=`<section class="card"><h2>今天的记录</h2>${todays.length?`<div class="list">${todays.map(logItem).join('')}</div>`:'<div class="muted small">今天还没有记录。</div>'}</section>`;
+  return h;
+}
+function logItem(l){
+  const k={'想法':'acc','意外发现':'amber','问题':'warn'}[l.kind]||'';
+  return `<div class="item"><div class="row between"><span class="pill ${k}">${esc(l.kind)}</span><span class="muted small">${esc(l.date)} ${shortDate(l.createdAt).split(' ')[1]||''}</span></div>
+   <div style="white-space:pre-wrap;margin:4px 0">${esc(l.text)}</div>
+   <div class="meta">${[l.projectId&&get('projects',l.projectId)?.name,l.experimentId&&`<a href="#/exp/${l.experimentId}">${l.experimentId}</a>`,l.hours&&l.hours+' h',l.rh&&l.rh+'%RH',l.temp&&l.temp+'°C'].filter(Boolean).join(' · ')}</div>
+   <div class="row" style="margin-top:6px">${photosBlock('logs',l)}<button class="ghost sm" data-act="delLog" data-id="${l.id}">删除</button></div></div>`;
+}
+
+function vExps(){
+  const E=live('experiments');const fil=window.__expFil||'活跃';
+  const shown=E.filter(e=>fil==='全部'||(fil==='活跃'?['计划','进行中','等待结果'].includes(e.status):e.status===fil)).map(e=>({e,l:lam(e)})).sort((a,b)=>(b.l??-1)-(a.l??-1));
+  let h=head('实验','按 λ 排序',`<button class="sm" data-act="newExp">新建</button>`);
+  h+=`<div class="chips">${['活跃','完成','放弃','全部'].map(k=>`<button class="chip" data-expfil="${k}" aria-pressed="${fil===k}">${k}</button>`).join('')}</div>`;
+  h+=`<section class="card">${shown.length?`<div class="list">${shown.map(({e,l})=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(get('projects',e.projectId)?.name||'')} · λ ${l==null?'—':fmt(l,3)} · ${e.p?Math.round(e.p*100)+'%':'—'} · ${e.days||'—'} 天${e.evidence?' · '+esc(e.evidence):''}</div></a>`).join('')}</div>`:'<div class="muted small">没有符合条件的实验。</div>'}</section>`;
+  return h;
+}
+
+function vExp(id){
+  const e=get('experiments',id);if(!e)return notFound();
+  const pj=get('projects',e.projectId);const figs=pj?.outline?.figs||[];
+  const S=live('samples').filter(s=>s.experimentId===id).sort((a,b)=>a.id<b.id?-1:1);
+  regions.lam=()=>{const l=lam(e);return `λ = <b class="mono">${l==null?'—':fmt(l,3)}</b> /天<span class="muted small">（成功率越低、耗时越短，越应该先做）</span>`;};
+  let h=head(esc(e.id),esc(pj?.name||''),`<button class="danger sm" data-act="del" data-c="experiments" data-id="${e.id}">删除</button>`);
+  h+=`<section class="card"><div class="grid">
+    ${field('experiments',id,'title','标题','text',e.title,{full:true})}
+    ${field('experiments',id,'projectId','项目',projOpts(),e.projectId)}
+    ${field('experiments',id,'figId','服务于论文中的图',figs.length?'sel:'+figs.map(f=>f.id+'::'+f.id+' '+f.title).join('|'):'sel:',e.figId)}
+    ${field('experiments',id,'status','状态',optsOf(EXP_STATUS),e.status)}
+    ${field('experiments',id,'question','要回答的问题','area',e.question)}
+    ${field('experiments',id,'hypothesis','假设与依据','area',e.hypothesis)}
+    ${field('experiments',id,'plan','方案（分组、剂量、样品数）','area',e.plan)}
+    ${field('experiments',id,'criteria','成功 / 验收标准','area',e.criteria)}
+  </div></section>`;
+  h+=`<section class="card"><h2>事前估计</h2><div class="grid">
+    ${field('experiments',id,'p','成功概率','sel:'+P_BUCKETS.map(([v,l])=>v+'::'+l).join('|'),e.p,{r:'lam'})}
+    ${field('experiments',id,'days','日历天数（含等待）','num',e.days,{r:'lam'})}
+    ${field('experiments',id,'handsOn','动手时间 (h)','num',e.handsOn)}
+  </div><div id="r_lam" style="margin-top:8px">${regions.lam()}</div></section>`;
+  h+=`<section class="card"><div class="row between"><h2>样品</h2><button class="sm" data-act="newSample" data-exp="${id}">新建样品</button></div>${S.length?`<div class="list">${S.map(s=>`<a class="item" href="#/sample/${s.id}"><div class="row between"><span class="t mono">${esc(s.id)}</span>${pill(s.status)}</div><div class="meta">${esc(s.name||'')} · ${esc(s.type||'')}</div></a>`).join('')}</div>`:'<div class="muted small">还没有样品。每个处理组或每批墨水建一个样品。</div>'}</section>`;
+  h+=expSummary(S);
+  h+=`<section class="card"><h2>结论与复盘</h2><div class="grid">
+    ${field('experiments',id,'result','结果与结论','area',e.result)}
+    ${field('experiments',id,'evidence','证据等级',optsOf(EVIDENCE),e.evidence)}
+    ${field('experiments',id,'actualDays','实际用了几天','num',e.actualDays)}
+    ${field('experiments',id,'failLayer','若失败，问题出在哪一层',optsOf(FAIL_LAYERS),e.failLayer)}
+    ${field('experiments',id,'failWhy','为什么失败 / 下次怎么避免','area',e.failWhy)}
+  </div></section>`;
+  const logs=live('logs').filter(l=>l.experimentId===id).sort((a,b)=>a.createdAt<b.createdAt?1:-1);
+  if(logs.length)h+=`<section class="card"><h2>相关日志</h2><div class="list">${logs.map(logItem).join('')}</div></section>`;
+  return h;
+}
+function stabStats(m){
+  const v=m.vals||{},t=m.table||{},n=Math.min(Math.max(Math.round(num(v.nrows)||5),1),24);
+  const st={};MT.rstab.table.cols.forEach(([c])=>{const base=c==='R0'?null:c==='R1'?'R0':'R1';const xs=[],rel=[];for(let i=1;i<=n;i++){const x=num(t[c+'_'+i]);if(x==null)continue;xs.push(x);if(base){const b=num(t[base+'_'+i]);if(b)rel.push((x-b)/b*100);}}
+    if(!xs.length){st[c]={};return;}const mn=xs.reduce((a,b)=>a+b,0)/xs.length,sd=xs.length>1?Math.sqrt(xs.reduce((a,b)=>a+(b-mn)**2,0)/(xs.length-1)):null;
+    st[c]={n:xs.length,mean:mn,cv:sd!=null&&mn?sd/mn*100:null,d:rel.length?rel.reduce((a,b)=>a+b,0)/rel.length:null,max:rel.length?Math.max(...rel.map(Math.abs)):null};});
+  const cd=num(v.critD)??5,cc=num(v.critCV)??10;let verdict='数据未齐';
+  if(st.R1.cv!=null&&['Rd','Rw','Rig'].every(k=>st[k].max!=null))verdict=(st.R1.cv<=cc&&['Rd','Rw','Rig'].every(k=>st[k].max<=cd))?'达标':'不达标';
+  return {n,st,verdict,cd,cc};
+}
+function expSummary(S){
+  const ids=new Set(S.map(s=>s.id));const M=live('measurements').filter(m=>ids.has(m.sampleId));
+  if(!M.length)return '';
+  const byT={};M.forEach(m=>{(byT[m.template]=byT[m.template]||[]).push(m);});
+  let h='<section class="card"><h2>测量汇总</h2>';
+  Object.entries(byT).forEach(([tk,ms])=>{const T=MT[tk];if(!T)return;h+=`<h3>${esc(T.name)}</h3><div class="tablewrap" style="margin-bottom:12px"><table>`;
+    if(tk==='rstab'){h+='<thead><tr><th>样品</th><th class="n">n</th><th class="n">ΔR₁ 掺杂</th><th class="n">CV R₁</th><th class="n">3–7 天</th><th class="n">泡水</th><th class="n">凝胶</th><th>判定</th></tr></thead><tbody>'+ms.map(m=>{const {st,verdict}=stabStats(m);return `<tr><td><a href="#/meas/${m.id}" class="mono">${esc(m.sampleId)}</a></td><td class="n">${st.R1.n||'—'}</td><td class="n">${sgn(st.R1.d,1)}</td><td class="n">${st.R1.cv==null?'—':fmt(st.R1.cv,1)+' %'}</td><td class="n">${sgn(st.Rd.d,1)}</td><td class="n">${sgn(st.Rw.d,1)}</td><td class="n">${sgn(st.Rig.d,1)}</td><td><span class="pill ${verdict==='达标'?'ok':verdict==='不达标'?'warn':''}">${verdict}</span></td></tr>`;}).join('')+'</tbody>';}
+    else{const fs=T.fields.filter(f=>f[2]!=='text'||f[0]==='electrolyte');h+='<thead><tr><th>样品</th>'+fs.map(f=>`<th>${esc(f[1])}</th>`).join('')+(T.calcs||[]).map(c=>`<th>${esc(CALC[c]?CALC[c]({}).label:'')}</th>`).join('')+'</tr></thead><tbody>'+ms.map(m=>`<tr><td><a href="#/meas/${m.id}" class="mono">${esc(m.sampleId)}</a></td>${fs.map(f=>`<td class="${f[2]==='num'?'n':''}">${esc(m.vals?.[f[0]]||'—')}</td>`).join('')}${(T.calcs||[]).map(c=>`<td class="n">${CALC[c]?CALC[c](m.vals||{}).text:''}</td>`).join('')}</tr>`).join('')+'</tbody>';}
+    h+='</table></div>';});
+  return h+'</section>';
+}
+
+function vSamples(){
+  const S=live('samples').sort((a,b)=>a.id<b.id?1:-1);const q=(window.__sq||'').toLowerCase();
+  const shown=S.filter(s=>!q||(s.id+' '+(s.name||'')+' '+(s.notes||'')+' '+(s.lots||'')).toLowerCase().includes(q));
+  let h=head('样品','编号 S-日期-序号',`<button class="sm" data-act="newSample">新建</button>`);
+  h+=`<input id="sq" placeholder="搜索编号、名称、批号、备注" value="${esc(window.__sq||'')}">`;
+  h+=`<section class="card">${shown.length?`<div class="list">${shown.map(s=>`<a class="item" href="#/sample/${s.id}"><div class="row between"><span class="t mono">${esc(s.id)}</span>${pill(s.status)}</div><div class="meta">${esc(s.name||'')} · ${esc(s.type||'')}${s.experimentId?' · '+esc(s.experimentId):''}</div></a>`).join('')}</div>`:'<div class="muted small">还没有样品。</div>'}</section>`;
+  return h;
+}
+function vSample(id){
+  const s=get('samples',id);if(!s)return notFound();
+  const kids=live('samples').filter(x=>(x.parentIds||'').split(/[,\s，]+/).includes(id));
+  const parents=(s.parentIds||'').split(/[,\s，]+/).filter(Boolean);
+  const M=live('measurements').filter(m=>m.sampleId===id).sort((a,b)=>a.createdAt<b.createdAt?-1:1);
+  const proc=s.proc||{template:'none',done:{},vals:{},dev:''};const T=PT[proc.template]||PT.none;
+  let h=head(`<span class="mono">${esc(s.id)}</span>`,esc(s.name||''),`<button class="danger sm" data-act="del" data-c="samples" data-id="${s.id}">删除</button>`);
+  h+=`<section class="card"><div class="grid">
+    ${field('samples',id,'name','名称 / 处理组','text',s.name,{full:true})}
+    ${field('samples',id,'type','类型',optsOf(SAMPLE_TYPES),s.type)}
+    ${field('samples',id,'status','状态',optsOf(SAMPLE_STATUS),s.status)}
+    ${field('samples',id,'experimentId','所属实验',expOpts(),s.experimentId)}
+    ${field('samples',id,'date','制备日期','date',s.date)}
+    ${field('samples',id,'parentIds','来源样品（编号，逗号分隔）','text',s.parentIds,{full:true})}
+    ${field('samples',id,'recipe','配方与实际用量','area',s.recipe)}
+    ${field('samples',id,'lots','关键材料批号','area',s.lots)}
+    ${field('samples',id,'notes','备注','area',s.notes)}
+  </div>
+  ${parents.length||kids.length?`<div class="small" style="margin-top:8px">${parents.length?'来源：'+parents.map(p=>`<a class="mono" href="#/sample/${esc(p)}">${esc(p)}</a>`).join('、'):''}${kids.length?'　派生：'+kids.map(k=>`<a class="mono" href="#/sample/${k.id}">${k.id}</a>`).join('、'):''}</div>`:''}
+  <div class="row" style="margin-top:10px"><button class="ghost sm" data-act="derive" data-id="${id}">由此派生新样品</button></div></section>`;
+  h+=`<section class="card"><h2>照片</h2>${photosBlock('samples',s)}</section>`;
+  h+=`<section class="card"><div class="row between"><h2>流程单</h2><select data-act="procTpl" data-id="${id}" style="width:auto">${Object.entries(PT).map(([k,t])=>`<option value="${k}"${proc.template===k?' selected':''}>${esc(t.name)}</option>`).join('')}</select></div>`;
+  if(T.steps.length){h+='<ol class="steps">'+T.steps.map((st,i)=>{const done=!!proc.done?.[i];const cid='st_'+id+'_'+i;return `<li class="step${done?' done':''}"><input type="checkbox" id="${cid}" data-b="samples|${esc(id)}|proc.done.${i}" data-bool="1" ${done?'checked':''}><label class="tt" for="${cid}">${esc(st.t)}</label>${st.d?`<div class="d">${esc(st.d)}</div>`:''}${st.f.length?`<div class="fs">${st.f.map(f=>field('samples',id,'proc.vals.'+f[0],f[1],f[2],proc.vals?.[f[0]])).join('')}</div>`:''}</li>`;}).join('')+'</ol>';}
+  h+=`<div class="grid" style="margin-top:8px">${field('samples',id,'proc.dev','偏离方案的地方（没有就留空）','area',proc.dev)}</div></section>`;
+  h+=`<section class="card"><div class="row between"><h2>测量</h2><div class="row"><select id="newMeasT" style="width:auto">${Object.entries(MT).map(([k,t])=>`<option value="${k}">${esc(t.name)}</option>`).join('')}</select><button class="sm" data-act="newMeas" data-id="${id}">添加</button></div></div>${M.length?`<div class="list">${M.map(m=>`<a class="item" href="#/meas/${m.id}"><div class="row between"><span class="t">${esc(MT[m.template]?.name||m.template)}</span><span class="mono small muted">${esc(m.id)}</span></div><div class="meta">${esc(m.date||'')}${m.template==='rstab'?' · '+stabStats(m).verdict:''}</div></a>`).join('')}</div>`:'<div class="muted small">还没有测量。</div>'}</section>`;
+  return h;
+}
+function vMeas(id){
+  const m=get('measurements',id);if(!m)return notFound();const T=MT[m.template]||MT.generic;
+  regions.calc=()=>calcBox(m,T);
+  let h=head(esc(T.name),`<a class="mono" href="#/sample/${esc(m.sampleId)}">${esc(m.sampleId)}</a> · <span class="mono">${esc(m.id)}</span>`,`<button class="danger sm" data-act="del" data-c="measurements" data-id="${m.id}">删除</button>`);
+  h+=`<section class="card"><div class="grid">${field('measurements',id,'date','测量日期','date',m.date)}${T.fields.map(f=>field('measurements',id,'vals.'+f[0],f[1],f[2],m.vals?.[f[0]],{r:(f[0]==='nrows'?'grid':'calc')})).join('')}${field('measurements',id,'instrument','仪器 / 设置','text',m.instrument)}${field('measurements',id,'rh','湿度 (%RH)','num',m.rh)}${field('measurements',id,'temp','温度 (°C)','num',m.temp)}</div></section>`;
+  if(T.table){regions.grid=()=>gridBox(m);h+=`<section class="card"><h2>逐条阻值（${esc(m.vals?.unit||'')}）</h2><div id="r_grid">${regions.grid()}</div></section>`;}
+  h+=`<section class="card" id="r_calc">${regions.calc()}</section>`;
+  h+=`<section class="card"><h2>照片与备注</h2>${photosBlock('measurements',m)}<div class="grid" style="margin-top:10px">${field('measurements',id,'notes','观察与备注','area',m.notes)}</div></section>`;
+  return h;
+}
+function gridBox(m){
+  const {n,st}=stabStats(m);const cols=MT.rstab.table.cols;const t=m.table||{};
+  let h='<div class="tablewrap"><table class="rgrid"><thead><tr><th>#</th>'+cols.map(c=>`<th class="n">${c[1]}</th>`).join('')+'</tr></thead><tbody>';
+  for(let i=1;i<=n;i++)h+=`<tr><th>${i}</th>`+cols.map(([c])=>`<td><input inputmode="decimal" aria-label="第 ${i} 条 ${c}" data-b="measurements|${esc(m.id)}|table.${c}_${i}" data-r="gridfoot" value="${esc(t[c+'_'+i]??'')}"></td>`).join('')+'</tr>';
+  return h+'</tbody><tfoot id="r_gridfoot">'+gridFoot(m)+'</tfoot></table></div><p class="muted small">ΔR₁ 相对 R₀（掺杂效应）；后三列相对 R₁（稳定性）。</p>';
+}
+function gridFoot(m){const {st}=stabStats(m);const cols=MT.rstab.table.cols;
+  return '<tr><th>均值</th>'+cols.map(([c])=>`<td class="n">${fmt(st[c].mean,st[c].mean!=null&&st[c].mean<10?3:1)}</td>`).join('')+'</tr><tr><th>CV</th>'+cols.map(([c])=>`<td class="n">${st[c].cv==null?'—':fmt(st[c].cv,1)+' %'}</td>`).join('')+'</tr><tr><th>平均 Δ</th>'+cols.map(([c],j)=>`<td class="n">${j?sgn(st[c].d,1):''}</td>`).join('')+'</tr><tr><th>最大 |Δ|</th>'+cols.map(([c],j)=>`<td class="n">${j>1&&st[c].max!=null?fmt(st[c].max,1)+' %':''}</td>`).join('')+'</tr>';}
+function calcBox(m,T){
+  if(m.template==='rstab'){const {verdict,cd,cc}=stabStats(m);return `<h2>判定</h2><span class="pill ${verdict==='达标'?'ok':verdict==='不达标'?'warn':''}">${verdict}</span><div class="muted small" style="margin-top:6px">标准：R₁ 的 CV ≤ ${cc}%，且第 3–7 天、泡水、凝胶三列的单条 |ΔR| ≤ ${cd}%。</div>`;}
+  if(!(T.calcs||[]).length)return '<h2>计算</h2><div class="muted small">此类测量没有自动计算项。</div>';
+  return '<h2>计算</h2>'+(T.calcs||[]).map(c=>{const r=CALC[c](m.vals||{});return `<div class="calc">${esc(r.label)}：${r.text}</div>${r.note?`<div class="muted small">${esc(r.note)}</div>`:''}`;}).join('');
+}
+
+function vReview(){
+  const end=window.__rvEnd||today();const start=window.__rvStart||(()=>{const d=new Date(Date.now()-13*864e5);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());})();
+  const inR=d=>d&&d>=start&&d<=end;
+  const L=live('logs').filter(l=>inR(l.date));
+  const hours={};L.forEach(l=>{const h=num(l.hours);if(h){const k=get('projects',l.projectId)?.name||'未指定项目';hours[k]=(hours[k]||0)+h;}});
+  const E=live('experiments').filter(e=>inR((e.updatedAt||'').slice(0,10)));
+  const done=E.filter(e=>e.status==='完成'||e.status==='放弃');
+  const calib=done.filter(e=>num(e.days)&&num(e.actualDays));
+  const ideas=L.filter(l=>l.kind==='想法'),surprise=L.filter(l=>l.kind==='意外发现'),probs=L.filter(l=>l.kind==='问题');
+  const layers={};live('experiments').filter(e=>e.failLayer).forEach(e=>layers[e.failLayer]=(layers[e.failLayer]||0)+1);
+  const past=live('reviews').sort((a,b)=>a.end<b.end?1:-1);
+  let h=head('回顾','每 1–2 周一次（Schulman）');
+  h+=`<section class="card"><div class="grid"><label class="f" for="rv_s">开始<input id="rv_s" type="date" value="${start}" data-rv="start"></label><label class="f" for="rv_e">结束<input id="rv_e" type="date" value="${end}" data-rv="end"></label></div></section>`;
+  h+=`<section class="card"><h2>这段时间</h2><div class="small">日志 ${L.length} 条 · 实验有更新 ${E.length} 个 · 结束 ${done.length} 个</div>
+   <h3 style="margin-top:10px">动手时间（按项目）</h3>${Object.keys(hours).length?`<table><tbody>${Object.entries(hours).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${fmt(v,1)} h</td></tr>`).join('')}</tbody></table>`:'<div class="muted small">日志里没有填写动手时间。</div>'}
+   ${done.length?`<h3 style="margin-top:10px">结束的实验</h3><div class="list">${done.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div><div class="meta">${esc(e.evidence||'未标证据等级')}${e.failLayer?' · 问题层：'+esc(e.failLayer):''}</div><div class="small" style="white-space:pre-wrap">${esc(e.result||'（未写结论）')}</div></a>`).join('')}</div>`:''}
+   ${calib.length?`<h3 style="margin-top:10px">时间估计校准</h3><table><thead><tr><th>实验</th><th class="n">预估天</th><th class="n">实际天</th></tr></thead><tbody>${calib.map(e=>`<tr><td>${esc(e.id)}</td><td class="n">${esc(e.days)}</td><td class="n">${esc(e.actualDays)}</td></tr>`).join('')}</tbody></table>`:''}
+   ${Object.keys(layers).length?`<h3 style="margin-top:10px">失败最常出在哪一层（全部记录）</h3><div class="chips">${Object.entries(layers).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="pill warn">${esc(k)} ${v}</span>`).join('')}</div>`:''}
+  </section>`;
+  const blk=(t,arr)=>arr.length?`<section class="card"><h2>${t}</h2><div class="list">${arr.map(logItem).join('')}</div></section>`:'';
+  h+=blk('意外发现（可能是新的问题 C）',surprise)+blk('想法',ideas)+blk('遇到的问题',probs);
+  const rid='RV-'+end;const rv=db.reviews[rid]&&!db.reviews[rid].deleted?db.reviews[rid]:null;
+  h+=`<section class="card"><h2>写下总结</h2>${rv?`<div class="grid">${field('reviews',rid,'findings','实验发现','area',rv.findings)}${field('reviews',rid,'insights','洞察','area',rv.insights)}${field('reviews',rid,'progress','进展','area',rv.progress)}${field('reviews',rid,'next','下一步','area',rv.next)}${field('reviews',rid,'followed','上次的计划跟进了吗','area',rv.followed)}</div>`:`<button data-act="newReview" data-start="${start}" data-end="${end}">开始写这一期总结</button>`}</section>`;
+  if(past.length)h+=`<section class="card"><h2>往期总结</h2><div class="list">${past.map(r=>`<div class="item"><div class="t">${esc(r.start)} — ${esc(r.end)}</div><div class="small" style="white-space:pre-wrap">${esc([r.findings&&'发现：'+r.findings,r.next&&'下一步：'+r.next].filter(Boolean).join('\n'))}</div></div>`).join('')}</div></section>`;
+  return h;
+}
+
+function vMore(){
+  let h=head('更多');
+  h+=`<section class="card"><div class="list">
+   <a class="item" href="#/projects"><div class="t">项目线与论文提纲</div><div class="meta">每条方向的目标、下一步，以及每张图需要哪些实验（Whitesides）</div></a>
+   <a class="item" href="#/ideas"><div class="t">想法池</div><div class="meta">暂时不做的想法，可以一键转成实验</div></a>
+   <a class="item" href="#/search"><div class="t">搜索</div><div class="meta">日志、实验、样品、测量</div></a>
+   <a class="item" href="#/settings"><div class="t">设置与同步</div><div class="meta">GitHub 私有仓库、导出与导入</div></a>
+  </div></section>`;
+  return h;
+}
+function vProjects(){
+  const P=live('projects').sort((a,b)=>a.id<b.id?-1:1);
+  let h=head('项目线','',`<button class="sm" data-act="newProject">新建</button>`);
+  h+=`<section class="card"><div class="list">${P.map(p=>{const figs=p.outline?.figs||[];const doneN=figs.filter(f=>f.status==='完成').length;return `<a class="item" href="#/project/${p.id}"><div class="row between"><span class="t">${esc(p.name)}</span>${pill(p.status)}</div><div class="meta">${figs.length?`图 ${doneN}/${figs.length} 完成 · `:''}${esc(p.next?'下一步：'+p.next:p.goal||'')}</div></a>`;}).join('')}</div></section>`;
+  return h;
+}
+function vProject(id){
+  const p=get('projects',id);if(!p)return notFound();p.outline=p.outline||{intro:'',figs:[],conclusion:''};
+  const E=live('experiments').filter(e=>e.projectId===id);
+  let h=head(esc(p.name),esc(p.id),`<button class="danger sm" data-act="del" data-c="projects" data-id="${p.id}">删除</button>`);
+  h+=`<section class="card"><div class="grid">${field('projects',id,'name','名称','text',p.name,{full:true})}${field('projects',id,'status','状态','sel:进行中|暂停|完成|放弃',p.status)}${field('projects',id,'goal','长期目标','area',p.goal)}${field('projects',id,'next','下一步','area',p.next)}</div></section>`;
+  h+=`<section class="card"><h2>论文提纲</h2><p class="muted small" style="margin-top:0">从项目一开始就写，随研究推进不断修改。每张图写清楚它要支撑的结论，再把实验挂到图下面。</p>
+   <div class="grid">${field('projects',id,'outline.intro','引言：问题、假设与意义','area',p.outline.intro)}</div>
+   <h3 style="margin-top:12px">图</h3>${p.outline.figs.map((f,i)=>{const ex=E.filter(e=>e.figId===f.id);return `<div class="card" style="margin-bottom:8px;background:var(--bg)"><div class="grid">${field('projects',id,'outline.figs.'+i+'.title',f.id+' 标题','text',f.title)}${field('projects',id,'outline.figs.'+i+'.status','数据状态','sel:空|部分|完成',f.status)}${field('projects',id,'outline.figs.'+i+'.claim','这张图要证明什么','area',f.claim)}</div><div class="small" style="margin-top:6px">${ex.length?ex.map(e=>`<a href="#/exp/${e.id}">${esc(e.id)}</a> ${pill(e.status)}`).join('　'):'<span class="muted">还没有实验</span>'}</div></div>`;}).join('')}
+   <button class="ghost sm" data-act="addFig" data-id="${id}">+ 添加图</button>
+   <div class="grid" style="margin-top:12px">${field('projects',id,'outline.conclusion','结论（目前能说什么）','area',p.outline.conclusion)}</div></section>`;
+  h+=`<section class="card"><div class="row between"><h2>实验</h2><button class="sm" data-act="newExp" data-proj="${id}">新建实验</button></div>${E.length?`<div class="list">${E.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.id)} ${esc(e.title)}</span>${pill(e.status)}</div></a>`).join('')}</div>`:'<div class="muted small">还没有实验。</div>'}</section>`;
+  return h;
+}
+function vIdeas(){
+  const I=live('logs').filter(l=>l.kind==='想法').sort((a,b)=>a.createdAt<b.createdAt?1:-1);
+  let h=head('想法池','');
+  h+=`<section class="card">${I.length?`<div class="list">${I.map(l=>`<div class="item"><div class="row between"><span class="muted small">${esc(l.date)}</span>${l.ideaStatus?pill(l.ideaStatus):''}</div><div style="white-space:pre-wrap;margin:4px 0">${esc(l.text)}</div><div class="row">${l.ideaStatus==='已转实验'&&l.toExp?`<a class="small" href="#/exp/${l.toExp}">→ ${esc(l.toExp)}</a>`:`<button class="ghost sm" data-act="ideaToExp" data-id="${l.id}">转为实验</button><button class="ghost sm" data-act="ideaDrop" data-id="${l.id}">放弃</button>`}</div></div>`).join('')}</div>`:'<div class="muted small">在“今天”里记一条类型为“想法”的日志，就会出现在这里。</div>'}</section>`;
+  return h;
+}
+function vSearch(){
+  const q=(window.__q||'').trim().toLowerCase();let res=[];
+  if(q){const hit=(r,fs)=>fs.some(f=>String(getPath(r,f)||'').toLowerCase().includes(q));
+    live('experiments').filter(r=>hit(r,['id','title','question','hypothesis','plan','result','failWhy'])).forEach(r=>res.push(['实验',`#/exp/${r.id}`,r.id+' '+r.title]));
+    live('samples').filter(r=>hit(r,['id','name','recipe','lots','notes','proc.dev'])).forEach(r=>res.push(['样品',`#/sample/${r.id}`,r.id+' '+(r.name||'')]));
+    live('measurements').filter(r=>hit(r,['id','sampleId','notes','instrument'])).forEach(r=>res.push(['测量',`#/meas/${r.id}`,r.id+' '+(MT[r.template]?.name||'')]));
+    live('logs').filter(r=>hit(r,['text'])).forEach(r=>res.push(['日志',r.experimentId?`#/exp/${r.experimentId}`:'#/review',r.date+' '+r.text.slice(0,60)]));}
+  let h=head('搜索','');
+  h+=`<input id="q" placeholder="关键词，如 LiTFSI、批号、开裂" value="${esc(window.__q||'')}">`;
+  h+=`<section class="card">${q?(res.length?`<div class="list">${res.map(([k,href,t])=>`<a class="item" href="${href}"><span class="pill">${k}</span> ${esc(t)}</a>`).join('')}</div>`:'<div class="muted small">没有结果。</div>'):'<div class="muted small">输入关键词。</div>'}</section>`;
+  return h;
+}
+function vSettings(){
+  let h=head('设置与同步');
+  h+=`<section class="card"><h2>GitHub 私有仓库</h2><div class="grid">
+    <label class="f" for="g_owner">用户名<input id="g_owner" data-cfg="owner" value="${esc(cfg.owner||'')}" placeholder="garywgh"></label>
+    <label class="f" for="g_repo">数据仓库名<input id="g_repo" data-cfg="repo" value="${esc(cfg.repo||'')}" placeholder="lab-data"></label>
+    <label class="f" for="g_branch">分支<input id="g_branch" data-cfg="branch" value="${esc(cfg.branch||'main')}"></label>
+    <label class="f full" for="g_token">访问令牌（只授权这一个仓库的 Contents 读写）<input id="g_token" type="password" data-cfg="token" value="${esc(cfg.token||'')}" autocomplete="off"></label>
+  </div><div class="row" style="margin-top:10px"><button data-act="syncNow">保存并同步</button><span class="muted small">${meta.lastSync?'上次同步 '+shortDate(meta.lastSync):'尚未同步'}</span></div>
+  <div class="note" style="margin-top:12px">
+   <b>第一次设置</b><br>
+   1. 在 GitHub 新建一个 <b>Private</b> 仓库（例如 lab-data），勾选 “Add a README”。<br>
+   2. 头像 → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token。Repository access 选 “Only select repositories” 并只选 lab-data；Permissions 里把 <b>Contents</b> 设为 Read and write，其余不动。<br>
+   3. 把令牌粘贴到上面，点“保存并同步”。在每台设备上各做一次第 3 步即可。<br>
+   令牌只保存在这台设备的浏览器里，只会发给 api.github.com。手机丢失时到 GitHub 删除这个令牌即可。
+  </div></section>`;
+  h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
+  h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 按失败率排序、记录预估与实际：Jacob Steinhardt · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
+  return h;
+}
+function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到今天</a></section>';}
+
+/* ================= router ================= */
+function route(){const h=location.hash.replace(/^#\/?/,'');const [a,b]=h.split('/');return {a:a||'',b:b?decodeURIComponent(b):''};}
+function render(){
+  regions={};const {a,b}=route();let html;
+  switch(a){case '':html=vToday();break;case 'exps':html=vExps();break;case 'exp':html=vExp(b);break;case 'samples':html=vSamples();break;case 'sample':html=vSample(b);break;case 'meas':html=vMeas(b);break;case 'review':html=vReview();break;case 'more':html=vMore();break;case 'projects':html=vProjects();break;case 'project':html=vProject(b);break;case 'ideas':html=vIdeas();break;case 'search':html=vSearch();break;case 'settings':html=vSettings();break;default:html=notFound();}
+  $('#app').innerHTML=html;
+  const navKey={'':'',exps:'exps',exp:'exps',samples:'samples',sample:'samples',meas:'samples',review:'review'}[a];
+  document.querySelectorAll('#nav a').forEach(x=>x.setAttribute('aria-current',x.dataset.nav===(navKey===undefined?'more':navKey)?'page':'false'));
+  setSync(syncMsg.t||(ghReady()?'':'仅本机（未连接 GitHub）'),syncMsg.cls||(ghReady()?'':'warn'));
+  hydratePhotos();
+}
+window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0);});
+
+/* ================= events ================= */
+function alertBar(t){setSync(t,'err');}
+const app=$('#app');
+app.addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.dataset.b&&!t.dataset.bool){const [c,id,path]=t.dataset.b.split('|');const r=db[c][id];if(!r)return;setPath(r,path,t.value);touch(c,id);
+    const rr=t.dataset.r;if(rr==='gridfoot'){const tf=$('#r_gridfoot');if(tf)tf.innerHTML=gridFoot(r);const cb=$('#r_calc');if(cb&&regions.calc)cb.innerHTML=regions.calc();}
+    else if(rr&&regions[rr]){const el=$('#r_'+rr);if(el)el.innerHTML=regions[rr]();if(rr==='grid'){const cb=$('#r_calc');if(cb&&regions.calc)cb.innerHTML=regions.calc();}}
+    return;}
+  if(t.dataset.draft){window.__draft[t.dataset.draft]=t.value;return;}
+  if(t.dataset.cfg){cfg[t.dataset.cfg]=t.value.trim();try{localStorage.setItem(LS_CFG,JSON.stringify(cfg));}catch(e){}return;}
+  if(t.id==='sq'){window.__sq=t.value;const pos=t.selectionStart;render();const n=$('#sq');n.focus();n.setSelectionRange(pos,pos);return;}
+  if(t.id==='q'){window.__q=t.value;const pos=t.selectionStart;render();const n=$('#q');n.focus();n.setSelectionRange(pos,pos);return;}
+});
+app.addEventListener('change',ev=>{
+  const t=ev.target;
+  if(t.dataset.b&&t.dataset.bool){const [c,id,path]=t.dataset.b.split('|');const r=db[c][id];setPath(r,path,t.checked);touch(c,id);t.closest('.step')?.classList.toggle('done',t.checked);return;}
+  if(t.dataset.b&&t.tagName==='SELECT'){const [c]=t.dataset.b.split('|');if(['projectId','experimentId'].some(k=>t.dataset.b.endsWith(k)))render();return;}
+  if(t.dataset.draft&&t.tagName==='SELECT'){window.__draft[t.dataset.draft]=t.value;return;}
+  if(t.dataset.rv){window['__rv'+(t.dataset.rv==='start'?'Start':'End')]=t.value;render();return;}
+  if(t.dataset.act==='procTpl'){const s=db.samples[t.dataset.id];s.proc=s.proc||{done:{},vals:{},dev:''};s.proc.template=t.value;s.proc.done={};touch('samples',s.id);render();return;}
+  if(t.id==='impFile'){const f=t.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(rd.result);const d=o.data||o;if(!d.samples&&!d.logs)throw 0;db=merge(db,d);changed();render();setSync('已导入并合并','ok');}catch(e){setSync('导入失败：不是本记录本导出的文件','err');}t.value='';};rd.readAsText(f);}
+});
+app.addEventListener('click',ev=>{
+  const v=ev.target.closest('[data-view]');if(v&&v.src){const vw=$('#viewer');vw.innerHTML=`<img src="${v.src}" alt="照片">`;vw.hidden=false;return;}
+  const k=ev.target.closest('[data-kind]');if(k){window.__draft.kind=k.dataset.kind;render();return;}
+  const ef=ev.target.closest('[data-expfil]');if(ef){window.__expFil=ef.dataset.expfil;render();return;}
+  const b=ev.target.closest('[data-act]');if(!b||b.tagName==='SELECT')return;const act=b.dataset.act;
+  if(act==='addLog'){const d=window.__draft;if(!d.text.trim()&&d.kind!=='计时'){setSync('先写点内容','warn');return;}
+    if(d.kind==='计时'&&!d.due){setSync('计时需要填写到期时间','warn');return;}
+    const id='L-'+Date.now().toString(36);put('logs',{id,date:today(),kind:d.kind,text:d.text.trim(),projectId:d.projectId,experimentId:d.experimentId,hours:d.kind==='计时'?'':d.hours,rh:d.rh,temp:d.temp,due:d.due,photos:[]});
+    window.__draft={kind:d.kind,text:'',projectId:d.projectId,experimentId:d.experimentId,hours:'',rh:d.rh,temp:d.temp,due:''};render();return;}
+  if(act==='timerDone'){const l=db.logs[b.dataset.id];l.done=true;touch('logs',l.id);render();return;}
+  if(act==='delLog'){if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='确认删除';return;}remove('logs',b.dataset.id);render();return;}
+  if(act==='del'){if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='再点一次确认';return;}remove(b.dataset.c,b.dataset.id);history.back();return;}
+  if(act==='photo'){photoTarget={c:b.dataset.c,id:b.dataset.id};$('#photoInput').click();return;}
+  if(act==='newExp'){const id=nextId('experiments','E',false,3);put('experiments',{id,projectId:b.dataset.proj||'',title:'新实验',status:'计划',p:'',days:'',handsOn:''});location.hash='#/exp/'+id;return;}
+  if(act==='newSample'||act==='derive'){const id=nextId('samples','S',true,2);const src=act==='derive'?db.samples[b.dataset.id]:null;put('samples',{id,name:src?(src.name||'')+' 派生':'',type:'',status:'计划',experimentId:b.dataset.exp||src?.experimentId||'',date:today(),parentIds:src?src.id:'',recipe:'',lots:'',notes:'',photos:[],proc:{template:'none',done:{},vals:{},dev:''}});location.hash='#/sample/'+id;return;}
+  if(act==='newMeas'){const tk=$('#newMeasT').value;const id=nextId('measurements','M',true,2);put('measurements',{id,sampleId:b.dataset.id,template:tk,date:today(),vals:{...(MT[tk].defaults||{})},table:{},notes:'',photos:[]});location.hash='#/meas/'+id;return;}
+  if(act==='newProject'){const id=nextId('projects','PJ',false,2);put('projects',{id,name:'新项目',status:'进行中',goal:'',next:'',outline:{intro:'',figs:[],conclusion:''}});location.hash='#/project/'+id;return;}
+  if(act==='addFig'){const p=db.projects[b.dataset.id];p.outline=p.outline||{figs:[]};p.outline.figs=p.outline.figs||[];p.outline.figs.push({id:'F'+(p.outline.figs.length+1),title:'',claim:'',status:'空'});touch('projects',p.id);render();return;}
+  if(act==='ideaToExp'){const l=db.logs[b.dataset.id];const id=nextId('experiments','E',false,3);put('experiments',{id,projectId:l.projectId||'',title:l.text.split('\n')[0].slice(0,40),question:l.text,status:'计划',p:'',days:'',handsOn:''});l.ideaStatus='已转实验';l.toExp=id;touch('logs',l.id);location.hash='#/exp/'+id;return;}
+  if(act==='ideaDrop'){const l=db.logs[b.dataset.id];l.ideaStatus='放弃';touch('logs',l.id);render();return;}
+  if(act==='newReview'){const id='RV-'+b.dataset.end;put('reviews',{id,start:b.dataset.start,end:b.dataset.end,findings:'',insights:'',progress:'',next:'',followed:''});render();return;}
+  if(act==='syncNow'){sync(true).then(render);return;}
+  if(act==='export'){const blob=new Blob([JSON.stringify({app:'labnote',exported:now(),data:db},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='labnote-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);return;}
+});
+$('#viewer').addEventListener('click',()=>{$('#viewer').hidden=true;});
+
+/* ================= boot ================= */
+load();saveLocal();render();
+if(ghReady())sync();
+setInterval(()=>{if(route().a===''&&!app.contains(document.activeElement))render();},60000);
+window.__labnote={get db(){return db;},merge,stabStats,CALC,lam,render};
 })();
 </script>
 </body>
