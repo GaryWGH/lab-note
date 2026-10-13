@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PEDOT 墨水实验记录</title>
+<style>
+/* Layout: phone-first lab notebook — experiment switcher, run header, recipe, group tabs, steps, data grid, summary */
+:root{
+  --bg:#eef0f3; --paper:#fbfcfd; --ink:#18202c; --muted:#5e6877; --rule:#d6dbe3;
+  --accent:#22408f; --accent-soft:#e3e9f7; --done:#2f7a52; --warn:#9a3b2e; --warn-soft:#f8e4e0; --pass:#2f7a52; --pass-soft:#e2f2e9;
+  --f-body:"PingFang SC","Noto Sans SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#11161f; --paper:#18202c; --ink:#e3e8ef; --muted:#97a2b3; --rule:#2c3646;
+  --accent:#8fa9ee; --accent-soft:#1f2b47; --done:#6cc396; --warn:#ef9a8a; --warn-soft:#3b2220; --pass:#6cc396; --pass-soft:#1b3326; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding:max(20px,env(safe-area-inset-top)) 16px 48px}
+.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:1.45rem;margin:0;line-height:1.25}
+h2{font-size:1rem;margin:0 0 10px}
+.sub{color:var(--muted);font-size:.86rem;margin:4px 0 0}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:16px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,input,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{background:var(--bg);border:1px solid var(--rule);border-radius:7px;padding:6px 9px;min-width:0}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+button{cursor:pointer;border-radius:7px;padding:7px 12px;border:1px solid var(--accent);background:var(--accent);color:var(--paper);font-weight:500}
+button.ghost{background:transparent;color:var(--accent)}
+.seg{display:flex;border:1px solid var(--accent);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;flex:1;background:transparent;color:var(--accent)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--paper)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.f{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:.76rem}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.callout{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:.86rem;margin:12px 0 0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tab{flex:0 0 auto;background:var(--paper);color:var(--ink);border:1px solid var(--rule);display:flex;gap:7px;align-items:center}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.tab .pc{font-family:var(--f-mono);font-size:.74rem;opacity:.8}
+.gnote{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 11px;font-size:.84rem;margin-bottom:12px}
+.target{font-family:var(--f-mono);font-size:.86rem;color:var(--muted);margin-bottom:10px}
+.steps{list-style:none;margin:0;padding:0}
+.step{display:grid;grid-template-columns:28px 1fr;gap:4px 10px;padding:12px 0;border-top:1px solid var(--rule)}
+.step:first-child{border-top:0}
+.step input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--done)}
+.step .t{font-weight:500}
+.step.done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--done)}
+.step .d{grid-column:2;font-size:.83rem;color:var(--muted)}
+.fields{grid-column:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:6px}
+.calc{grid-column:2;font-family:var(--f-mono);color:var(--accent);font-size:.9rem}
+.rgrid input{width:100%;min-width:64px;padding:5px 6px;text-align:right}
+.rgrid td{padding:4px}
+.rgrid tfoot td{font-family:var(--f-mono);font-size:.8rem;color:var(--accent)}
+textarea{width:100%;min-height:80px;resize:vertical}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.78rem;font-weight:500}
+.pill.ok{background:var(--pass-soft);color:var(--pass)} .pill.no{background:var(--warn-soft);color:var(--warn)} .pill.na{background:var(--bg);color:var(--muted)}
+.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+.foot{font-size:.78rem;color:var(--muted)}
+.status{font-size:.78rem;color:var(--muted);font-family:var(--f-mono)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PEDOT 墨水实验记录</h1>
+    <p class="sub">数据只保存在本设备的浏览器里。定期点底部“导出备份”，换设备或清理浏览器前务必先导出。</p>
+  </header>
+
+  <div class="seg" role="group" aria-label="选择实验">
+    <button type="button" data-exp="il" aria-pressed="true">离子液体筛选</button>
+    <button type="button" data-exp="fe">Fe³⁺ 交联</button>
+  </div>
+
+  <section class="card">
+    <div class="row">
+      <select id="run" style="flex:1 1 200px" aria-label="实验轮次"></select>
+      <button id="newRunBtn" class="ghost" type="button">新建一轮</button>
+      <span id="status" class="status"></span>
+    </div>
+    <form id="newRunForm" class="grid2" hidden>
+      <label class="f" for="nr-name">名称<input id="nr-name" required></label>
+      <label class="f" for="nr-date">日期<input id="nr-date" type="date"></label>
+      <div class="row"><button type="submit">创建</button><button type="button" class="ghost" id="nr-cancel">取消</button></div>
+    </form>
+    <div class="grid2" id="runMeta"></div>
+  </section>
+
+  <section class="card"><h2 id="recipeTitle"></h2><div class="target" id="recipeLine"></div><div class="tablewrap"><table id="recipe"></table></div><p class="callout" id="recipeNote"></p></section>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <section class="card" id="panel"></section>
+
+  <section class="card"><h2>组间对比</h2><div class="tablewrap"><table id="summary"></table></div><p class="foot" id="summaryNote" style="margin:10px 0 0"></p></section>
+
+  <section class="card"><h2>本轮备注</h2><textarea id="runNote" aria-label="本轮备注"></textarea></section>
+
+  <section class="card">
+    <h2>数据备份</h2>
+    <div class="row">
+      <button type="button" id="expJson">导出备份 (JSON)</button>
+      <button type="button" class="ghost" id="expCsv">导出本实验表格 (CSV)</button>
+      <label class="ghost" style="cursor:pointer;color:var(--accent);font-weight:500;padding:7px 12px;border:1px solid var(--accent);border-radius:7px" for="impFile">导入备份</label>
+      <input type="file" id="impFile" accept=".json,application/json" hidden>
+    </div>
+    <p class="foot" style="margin:10px 0 0">JSON 备份包含两个实验的全部数据，可以发给 Claude 分析，或导入到另一台设备。导入会覆盖本设备当前数据。</p>
+  </section>
+</div>
+
+<script>
+(function(){
+// ---------- experiment definitions ----------
+const PAPER_MMOL_PER_G = 300/226.1/20;      // EMIM:TCB, Oh et al. 2024: 2:1:0.03 wt
+const SULF_MMOL_PER_G = 0.89/20;            // estimate: PH1000 ~1.1 wt% solids, PEDOT:PSS 1:2.5, PSS unit 184 g/mol
+const IL = {
+  title:'配方（PEDOT:PSS 溶液 20 g 基准）',
+  groups:[
+    {id:'li15',name:'LiTFSI 1.5 当量',mw:287.1,mmolPerG:PAPER_MMOL_PER_G,note:'主线。剂量等于原文 EMIM:TCB 的摩尔数，约为磺酸根的 1.5 倍。LiTFSI 吸湿性强，先干燥，快速称量。'},
+    {id:'li30',name:'LiTFSI 3 当量',mw:287.1,mmolPerG:PAPER_MMOL_PER_G*2,note:'条件组：只有 1.5 当量组离心后上清液仍然很蓝时才做。'},
+    {id:'tcb',name:'EMIM:TCB',mw:226.1,mmolPerG:PAPER_MMOL_PER_G,note:'原文体系。买得到才做，作为参照。'}
+  ],
+  steps:[
+    {id:'s1',t:'称量 PEDOT:PSS 溶液',d:'记录批号。',f:[['m_pedot','实际质量 (g)','num']]},
+    {id:'s2',t:'加去离子水（PEDOT:PSS 质量的一半）',f:[['m_water','实际质量 (g)','num']]},
+    {id:'s3',t:'加入添加剂',d:'按上方目标量称量。',f:[['m_add','实际质量 (mg)','num'],['dissolve','溶解状态','sel:完全溶解|轻微浑浊|可见油滴']]},
+    {id:'s4',t:'搅拌 900 rpm ≥ 12 h',f:[['pH','混合后 pH','num']]},
+    {id:'s5',t:'液氮 10 min，冻干 72 h',f:[]},
+    {id:'s6',t:'冻干物剪碎 + 10 mL 水，尖端超声 2 h（30%）',f:[['m_fd','冻干物用量 (mg)','num']]},
+    {id:'s7',t:'加 Tween 80 30 mg，超声 3 min（20%）',f:[]},
+    {id:'s8',t:'离心 45 min',d:'记录 RCF，不要只记转速。',f:[['rcf','RCF (g)','num']]},
+    {id:'s9',t:'观察上清液',d:'拍照留档。若 1.5 当量组仍是“蓝 / 深蓝”，再做 3 当量组。',f:[['sup','上清颜色','sel:无色|浅蓝|蓝|深蓝']]},
+    {id:'s10',t:'倒上清、补 10 mL 水、混匀、同条件再离心',f:[]},
+    {id:'s11',t:'沉淀称干重',d:'取一份烘干。',f:[['dry','干重 (mg)','num']],calc:'yield'},
+    {id:'s12',t:'挤出测试',d:'针头内径和气压记在备注里。',f:[['ext','挤出表现','sel:可挤出且保形|可挤出但塌陷|难以挤出']]},
+    {id:'s13',t:'涂膜测电导（可选）',f:[['thick','膜厚 (µm)','num'],['rs','方阻 (Ω/sq)','num']],calc:'sigma'}
+  ]
+};
+const FE = {
+  title:'溶液配制',
+  groups:[
+    {id:'fe10',name:'FeCl₃ 10 mM',mM:10,n:5,note:'低浓度：掺杂少。两档都达标时优先选这一档。'},
+    {id:'fe100',name:'FeCl₃ 100 mM',mM:100,n:5,note:'高浓度：交联更充分，注意变色和开裂。'},
+    {id:'ref',name:'参考线（不处理）',mM:0,n:2,note:'同批打印、不浸泡，只用于判断不达标时是交联不够还是墨水本身的问题。'}
+  ],
+  cols:[['R0','R₀ 处理前'],['R1','R₁ 处理后'],['Rd','R 第 3–7 天'],['Rw','R 泡水 1 h'],['Rig','R 凝胶 24 h']],
+  steps:[
+    {id:'s1',t:'同批打印全部电阻线并干燥',d:'所有组同一批墨水、同一针头和程序，打印后随机分组。',f:[['print','打印参数','text']]},
+    {id:'s2',t:'测 R₀',f:[]},
+    {id:'s3',t:'配 FeCl₃ 溶液并测 pH',d:'不要调 pH：pH 高于约 2–3 会生成氢氧化铁沉淀。现配现用。',f:[['m_salt','实际称量 (mg)','num'],['pH','实测 pH','num']],soak:true},
+    {id:'s4',t:'浸泡',f:[['t_soak','时间 (min)','num']],soak:true},
+    {id:'s5',t:'去离子水漂洗 3 × 30 s，干燥',f:[],soak:true},
+    {id:'s6',t:'测 R₁（掺杂效应）',f:[]},
+    {id:'s7',t:'放置 3–7 天后测干态阻值',d:'检查掺杂是否随时间回落。',f:[['days','间隔天数','num']]},
+    {id:'s8',t:'泡去离子水 1 h，擦干立即测',f:[]},
+    {id:'s9',t:'重新干燥后贴离子凝胶 24 h，揭下立即测',f:[['gel','凝胶批次','text']]},
+    {id:'s10',t:'外观检查',f:[['color','颜色','sel:无变化|轻微发黄|明显黄棕'],['crack','开裂 / 脱落','sel:无|边缘少量|明显开裂|脱落']]}
+  ]
+};
+const EXPS={il:IL,fe:FE};
+
+// ---------- storage ----------
+const KEY='pedot-labnb-v1';
+let store;
+function blank(){return {il:{runs:[],entries:{},cur:null},fe:{runs:[],entries:{},cur:null}};}
+try{store=JSON.parse(localStorage.getItem(KEY))||blank();}catch(e){store=blank();}
+let exp='il', active=null, saveTimer=null;
+const $=s=>document.querySelector(s);
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(store));$('#status').textContent='已保存到本机';}catch(e){$('#status').textContent='保存失败：浏览器禁止本地存储，请尽快导出';}},300);}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=v=>{const x=parseFloat(v);return isFinite(x)?x:null;};
+const fmt=(x,d)=>(x==null||!isFinite(x))?'—':x.toFixed(d);
+const sgn=(x,d)=>(x==null||!isFinite(x))?'—':(x>0?'+':'')+x.toFixed(d)+' %';
+const S=()=>store[exp], E=()=>EXPS[exp];
+const run=()=>S().runs.find(r=>r.id===S().cur)||null;
+function entry(gid){const k=S().cur+'--'+gid;if(!S().entries[k])S().entries[k]={steps:{},v:{},notes:''};return S().entries[k];}
+function grp(gid){return E().groups.find(g=>g.id===gid);}
+
+// ---------- calculations ----------
+function ilYield(v){const d=num(v.dry),m=num(v.m_fd);return d!=null&&m?d/m*100:null;}
+function ilSigma(v){const t=num(v.thick),r=num(v.rs);return t&&r?1/(r*t*1e-4):null;}
+function feN(g){return g.n;}
+function colStats(g,v,col,base){
+  const xs=[],rel=[];
+  for(let i=1;i<=feN(g);i++){const x=num(v[col+'_'+i]),b=num(v[base+'_'+i]);if(x!=null){xs.push(x);if(b&&col!==base)rel.push((x-b)/b*100);}}
+  if(!xs.length)return {mean:null,cv:null,d:null,maxAbs:null};
+  const m=xs.reduce((a,b)=>a+b,0)/xs.length, sd=xs.length>1?Math.sqrt(xs.reduce((a,b)=>a+(b-m)**2,0)/(xs.length-1)):null;
+  return {mean:m,cv:sd!=null&&m?sd/m*100:null,d:rel.length?rel.reduce((a,b)=>a+b,0)/rel.length:null,maxAbs:rel.length?Math.max(...rel.map(Math.abs)):null};
+}
+const baseOf=c=>c==='R1'?'R0':c==='R0'?'R0':'R1';  // doping vs R0; stability vs R1
+function crit(){const r=run()||{};return {d:num(r.critD)??5,cv:num(r.critCV)??10};}
+function verdict(g){
+  const v=entry(g.id).v,c=crit(); if(g.id==='ref')return null;
+  const s1=colStats(g,v,'R1','R0'); const st=['Rd','Rw','Rig'].map(k=>colStats(g,v,k,'R1'));
+  if(s1.cv==null||st.some(s=>s.maxAbs==null))return 'na';
+  return (s1.cv<=c.cv&&st.every(s=>s.maxAbs<=c.d))?'ok':'no';
+}
+
+// ---------- render ----------
+function renderSeg(){document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.exp===exp));}
+function renderRuns(){
+  const s=S();
+  $('#run').innerHTML=s.runs.length?s.runs.map(r=>`<option value="${esc(r.id)}"${r.id===s.cur?' selected':''}>${esc(r.name)}${r.date?' · '+esc(r.date):''}</option>`).join(''):'<option value="">（暂无轮次）</option>';
+  const r=run(), meta=$('#runMeta');
+  if(!r){meta.innerHTML='';}
+  else if(!meta.contains(document.activeElement)){
+    const fields=exp==='il'?[['scale','PEDOT:PSS 溶液 (g)',20],['batch','PEDOT:PSS 批号','']]:[['vol','每种溶液体积 (mL)',50],['critD','验收：|ΔR| ≤ (%)',5],['critCV','验收：CV ≤ (%)',10],['ink','墨水批次 / 固含量','']];
+    meta.innerHTML=fields.map(([k,l,d])=>`<label class="f" for="m-${k}">${l}<input id="m-${k}" data-meta="${k}" class="${typeof d==='number'?'num':''}" ${typeof d==='number'?'inputmode="decimal"':''} value="${esc(r[k]??d)}"></label>`).join('');
+  }
+  const rn=$('#runNote');if(document.activeElement!==rn)rn.value=r?.note||'';rn.disabled=!r;
+}
+function renderRecipe(){
+  $('#recipeTitle').textContent=E().title; const r=run()||{};
+  if(exp==='il'){
+    const g=num(r.scale)||20;
+    $('#recipeLine').textContent=`PEDOT:PSS 溶液 ${fmt(g,1)} g · 水 ${fmt(g/2,1)} g · 估计磺酸根 ${fmt(SULF_MMOL_PER_G*g,2)} mmol`;
+    $('#recipe').innerHTML='<thead><tr><th>组</th><th class="n">mmol</th><th class="n">加入量 (mg)</th></tr></thead><tbody>'+IL.groups.map(x=>`<tr><td>${esc(x.name)}</td><td class="n">${fmt(x.mmolPerG*g,3)}</td><td class="n">${fmt(x.mmolPerG*g*x.mw,0)}</td></tr>`).join('')+'</tbody>';
+    $('#recipeNote').textContent='剂量依据：原文 PEDOT:PSS : 水 : EMIM:TCB = 2 : 1 : 0.03（质量比），约为磺酸根的 1.5 倍当量。磺酸根按 PH1000（固含量约 1.1 wt%，PEDOT:PSS ≈ 1:2.5）估算，换用其他型号需重算。';
+  }else{
+    const V=num(r.vol)||50;
+    $('#recipeLine').textContent=`每种溶液 ${fmt(V,0)} mL`;
+    $('#recipe').innerHTML='<thead><tr><th>组</th><th class="n">FeCl₃·6H₂O (mg)</th><th class="n">无水 FeCl₃ (mg)</th></tr></thead><tbody>'+FE.groups.filter(g=>g.mM).map(g=>{const mol=g.mM/1000*V/1000;return `<tr><td>${esc(g.name)}</td><td class="n">${fmt(mol*270.30*1000,1)}</td><td class="n">${fmt(mol*162.20*1000,1)}</td></tr>`;}).join('')+'</tbody>';
+    $('#recipeNote').textContent='判断标准：R₁ 的 CV 不超过验收值，且第 3–7 天、泡水 1 h、贴凝胶 24 h 三个时间点相对 R₁ 的最大单条变化都不超过 |ΔR| 验收值。两档都达标时选 10 mM。';
+  }
+}
+const stepsFor=g=>E().steps.filter(s=>!(s.soak&&!g.mM));
+function renderTabs(){
+  const gs=E().groups; if(!gs.some(g=>g.id===active))active=gs[0].id;
+  $('#tabs').innerHTML=gs.map(g=>{const st=stepsFor(g),e=entry(g.id);return `<button type="button" role="tab" class="tab" aria-selected="${g.id===active}" data-g="${g.id}">${esc(g.name)}<span class="pc">${st.filter(s=>e.steps[s.id]).length}/${st.length}</span></button>`;}).join('');
+}
+function fieldHtml(f,v){
+  const [k,label,type]=f,id=`f-${exp}-${active}-${k}`,val=v[k]??'';
+  if(type.startsWith('sel:'))return `<label class="f" for="${id}">${esc(label)}<select id="${id}" data-k="${k}"><option value=""></option>${type.slice(4).split('|').map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+  return `<label class="f" for="${id}">${esc(label)}<input id="${id}" data-k="${k}" ${type==='num'?'inputmode="decimal" class="num"':''} value="${esc(val)}"></label>`;
+}
+function calcText(k,v){return k==='yield'?`沉淀收率 ${fmt(ilYield(v),1)} %`:k==='sigma'?`σ = ${fmt(ilSigma(v),1)} S/cm`:'';}
+function gridHtml(g,v){
+  let h='<div class="tablewrap"><table class="rgrid"><thead><tr><th>#</th>'+FE.cols.map(c=>`<th class="n">${c[1]}</th>`).join('')+'</tr></thead><tbody>';
+  for(let i=1;i<=feN(g);i++)h+=`<tr><th>${i}</th>`+FE.cols.map(([c])=>`<td><input class="num" inputmode="decimal" data-k="${c}_${i}" aria-label="线 ${i} ${c}" value="${esc(v[c+'_'+i]??'')}"></td>`).join('')+'</tr>';
+  const st=FE.cols.map(([c])=>colStats(g,v,c,baseOf(c)));
+  h+='</tbody><tfoot><tr><th>均值</th>'+st.map(s=>`<td class="n">${fmt(s.mean,s.mean!=null&&s.mean<10?3:1)}</td>`).join('')+'</tr>';
+  h+='<tr><th>CV</th>'+st.map(s=>`<td class="n">${s.cv==null?'—':fmt(s.cv,1)+' %'}</td>`).join('')+'</tr>';
+  h+='<tr><th>平均 Δ</th>'+st.map((s,j)=>`<td class="n">${j?sgn(s.d,1):''}</td>`).join('')+'</tr>';
+  h+='<tr><th>最大 |Δ|</th>'+st.map((s,j)=>`<td class="n">${j>1&&s.maxAbs!=null?fmt(s.maxAbs,1)+' %':''}</td>`).join('')+'</tr>';
+  return h+'</tfoot></table></div><p class="foot">Δ 的基准：R₁ 相对 R₀（掺杂效应）；其余三列相对 R₁（稳定性）。</p>';
+}
+function renderPanel(){
+  const p=$('#panel');
+  if(!run()){p.innerHTML='<div class="empty">还没有实验轮次。点上方“新建一轮”开始记录。</div>';return;}
+  const g=grp(active),e=entry(active);
+  let tgt='';
+  if(exp==='il'){const sc=num(run().scale)||20;tgt=`目标加入量 ${fmt(g.mmolPerG*sc*g.mw,0)} mg（${fmt(g.mmolPerG*sc,3)} mmol）`;}
+  else if(g.mM){const mol=g.mM/1000*(num(run().vol)||50)/1000;tgt=`称 FeCl₃·6H₂O ${fmt(mol*270.30*1000,1)} mg（或无水 ${fmt(mol*162.20*1000,1)} mg）`;}
+  else tgt='不浸泡';
+  let h=`<h2>${esc(g.name)}</h2><div class="gnote">${esc(g.note)}</div><div class="target">${esc(tgt)}</div><ol class="steps">`;
+  stepsFor(g).forEach(s=>{const done=!!e.steps[s.id],cid=`c-${exp}-${active}-${s.id}`;
+    h+=`<li class="step${done?' done':''}" data-s="${s.id}"><input type="checkbox" id="${cid}" ${done?'checked':''}><label class="t" for="${cid}">${esc(s.t)}</label>`;
+    if(s.d)h+=`<div class="d">${esc(s.d)}</div>`;
+    if(s.f.length)h+=`<div class="fields">${s.f.map(f=>fieldHtml(f,e.v)).join('')}</div>`;
+    if(s.calc)h+=`<div class="calc" data-calc="${s.calc}">${calcText(s.calc,e.v)}</div>`;
+    h+='</li>';});
+  h+='</ol>';
+  if(exp==='fe')h+=`<h2 style="margin-top:14px">阻值记录（单位全组统一，如 kΩ）</h2><div id="gridBox">${gridHtml(g,e.v)}</div>`;
+  h+=`<label class="f" for="notes-${exp}-${active}" style="margin-top:12px">本组观察记录<textarea id="notes-${exp}-${active}" data-notes="1">${esc(e.notes)}</textarea></label>`;
+  p.innerHTML=h;
+}
+function renderSummary(){
+  if(exp==='il'){
+    $('#summary').innerHTML='<thead><tr><th>组</th><th class="n">加入 (mg)</th><th>上清</th><th class="n">收率</th><th>挤出</th><th class="n">σ (S/cm)</th></tr></thead><tbody>'+IL.groups.map(g=>{const v=entry(g.id).v;return `<tr><td>${esc(g.name)}</td><td class="n">${esc(v.m_add||'—')}</td><td>${esc(v.sup||'—')}</td><td class="n">${ilYield(v)==null?'—':fmt(ilYield(v),1)+' %'}</td><td>${esc(v.ext||'—')}</td><td class="n">${fmt(ilSigma(v),1)}</td></tr>`;}).join('')+'</tbody>';
+    $('#summaryNote').textContent='成功标准：上清液接近无色、沉淀能挤出且保形。电导率是加分项。';
+  }else{
+    $('#summary').innerHTML='<thead><tr><th>组</th><th class="n">ΔR₁ 掺杂</th><th class="n">CV R₁</th><th class="n">3–7 天</th><th class="n">泡水</th><th class="n">凝胶</th><th>判定</th></tr></thead><tbody>'+FE.groups.map(g=>{const v=entry(g.id).v,s1=colStats(g,v,'R1','R0'),[sd,sw,sg]=['Rd','Rw','Rig'].map(k=>colStats(g,v,k,'R1')),vd=verdict(g);
+      const pill=vd==null?'<span class="pill na">参考</span>':vd==='ok'?'<span class="pill ok">达标</span>':vd==='no'?'<span class="pill no">不达标</span>':'<span class="pill na">数据未齐</span>';
+      return `<tr><td>${esc(g.name)}</td><td class="n">${sgn(s1.d,1)}</td><td class="n">${s1.cv==null?'—':fmt(s1.cv,1)+' %'}</td><td class="n">${sgn(sd.d,1)}</td><td class="n">${sgn(sw.d,1)}</td><td class="n">${sgn(sg.d,1)}</td><td>${pill}</td></tr>`;}).join('')+'</tbody>';
+    const c=crit();$('#summaryNote').textContent=`当前验收标准：单条 |ΔR| ≤ ${c.d} %，CV ≤ ${c.cv} %（可在上方修改）。表中三列稳定性数据为平均值，判定按最大单条变化。`;
+  }
+}
+function renderAll(){renderSeg();renderRuns();renderRecipe();renderTabs();renderPanel();renderSummary();}
+
+// ---------- events ----------
+document.querySelector('.seg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;exp=b.dataset.exp;active=null;renderAll();});
+$('#tabs').addEventListener('click',ev=>{const b=ev.target.closest('.tab');if(!b)return;active=b.dataset.g;renderTabs();renderPanel();});
+$('#panel').addEventListener('change',ev=>{const t=ev.target;
+  if(t.type==='checkbox'){const li=t.closest('.step');entry(active).steps[li.dataset.s]=t.checked;li.classList.toggle('done',t.checked);renderTabs();save();return;}
+  if(t.tagName==='SELECT'&&t.dataset.k){entry(active).v[t.dataset.k]=t.value;renderSummary();save();}
+});
+$('#panel').addEventListener('input',ev=>{const t=ev.target,e=entry(active);
+  if(t.dataset.notes){e.notes=t.value;save();return;}
+  if(t.dataset.k&&t.tagName==='INPUT'){e.v[t.dataset.k]=t.value.trim();
+    const c=t.closest('.step')?.querySelector('[data-calc]');if(c)c.textContent=calcText(c.dataset.calc,e.v);
+    if(exp==='fe'&&t.closest('.rgrid')){const box=$('#gridBox'),tmp=document.createElement('div');tmp.innerHTML=gridHtml(grp(active),e.v);box.querySelector('tfoot').replaceWith(tmp.querySelector('tfoot'));}
+    renderSummary();save();}
+});
+$('#runMeta').addEventListener('input',ev=>{const r=run(),k=ev.target.dataset.meta;if(!r||!k)return;r[k]=ev.target.value;renderRecipe();renderSummary();if(exp==='il'){const tg=$('#panel .target');if(tg)renderPanel();}save();});
+$('#run').addEventListener('change',ev=>{S().cur=ev.target.value||null;renderAll();save();});
+$('#runNote').addEventListener('input',ev=>{const r=run();if(!r)return;r.note=ev.target.value;save();});
+$('#newRunBtn').addEventListener('click',()=>{const f=$('#newRunForm');f.hidden=!f.hidden;if(!f.hidden){$('#nr-name').value=`第 ${S().runs.length+1} 轮`;$('#nr-date').value=new Date().toISOString().slice(0,10);$('#nr-name').focus();}});
+$('#nr-cancel').addEventListener('click',()=>{$('#newRunForm').hidden=true;});
+$('#newRunForm').addEventListener('submit',ev=>{ev.preventDefault();
+  const r={id:'r'+Date.now().toString(36),name:$('#nr-name').value.trim()||'未命名',date:$('#nr-date').value,note:''};
+  S().runs.unshift(r);S().cur=r.id;$('#newRunForm').hidden=true;renderAll();save();});
+
+// ---------- export / import ----------
+function download(name,text,type){const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+const stamp=()=>new Date().toISOString().slice(0,16).replace(/[:T]/g,'-');
+$('#expJson').addEventListener('click',()=>download(`pedot-lab-backup-${stamp()}.json`,JSON.stringify({app:'pedot-labnb',version:1,exported:new Date().toISOString(),data:store},null,2),'application/json'));
+$('#expCsv').addEventListener('click',()=>{
+  const s=S(),rows=[];const keys=new Set();
+  s.runs.forEach(r=>E().groups.forEach(g=>{const e=s.entries[r.id+'--'+g.id];if(!e)return;Object.keys(e.v).forEach(k=>keys.add(k));}));
+  const kl=[...keys].sort();rows.push(['run','date','group',...kl,'notes']);
+  s.runs.forEach(r=>E().groups.forEach(g=>{const e=s.entries[r.id+'--'+g.id];if(!e)return;rows.push([r.name,r.date||'',g.name,...kl.map(k=>e.v[k]??''),e.notes||'']);}));
+  const csv='﻿'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download(`pedot-${exp}-${stamp()}.csv`,csv,'text/csv');
+});
+$('#impFile').addEventListener('change',ev=>{const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const o=JSON.parse(rd.result);const d=o.data||o;if(!d.il||!d.fe)throw 0;store=d;active=null;renderAll();save();$('#status').textContent='已导入备份';}catch(e){$('#status').textContent='导入失败：不是本页面导出的备份文件';}ev.target.value='';};
+  rd.readAsText(f);});
+
+renderAll();
+})();
+</script>
+</body>
+</html>
