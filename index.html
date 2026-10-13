@@ -161,6 +161,13 @@ const PT={
     {t:'浸泡',f:[['t_soak','时间 (min)','num']]},
     {t:'去离子水漂洗 3 × 30 s，干燥',f:[['dry','干燥条件','text']]}
   ]},
+  agink:{name:'纳米银墨水 V1.0 配制',steps:[
+    {t:'EC 120 mg + 松油醇 3.143 g，70–80 ℃ 磁力搅拌，再从中称取 326.3 mg',f:[['ec_m','EC (mg，目标 120)','num'],['terp_m','松油醇 (g，目标 3.143)','num'],['ec_state','溶解状态','sel:澄清|微浊|有凝胶团'],['ec_take','取用 (mg，目标 326.3)','num']]},
+    {t:'PVP 45 mg + IPA 1.692 g，从中称取 173.7 mg',f:[['pvp_m','PVP (mg，目标 45)','num'],['ipa_m','IPA (g，目标 1.692)','num'],['pvp_take','取用 (mg，目标 173.7)','num']]},
+    {t:'冷却到室温后，再和 PVP–IPA 溶液混合，搅匀',f:[]},
+    {t:'1.5000 g 银粉分 3–5 次加入；可选搅拌液体时加入',f:[['ag_m','Ag (g，目标 1.5000)','num'],['ag_n','加入次数','num'],['ag_mode','加入方式','sel:每次加完再搅匀|边搅拌边加入']]},
+    {t:'KOH 碱液浸泡 PI 表面 2 min，清洗后用 PEI-10k 浸泡 10 min',f:[['koh','KOH 浓度','text'],['pei_t','PEI 浸泡 (min)','num']]}
+  ]},
   print:{name:'DIW 打印',steps:[
     {t:'墨水准备与脱泡',f:[['ink','墨水样品号','text','g','墨水样品号']]},
     {t:'设置打印参数',f:[['nozzle','针头内径 (µm)','num'],['pressure','气压 (kPa)','num'],['speed','速度 (mm/s)','num'],['layers','层数','num']]},
@@ -168,7 +175,7 @@ const PT={
     {t:'干燥 / 后处理',f:[['post','条件','text']]}
   ]}
 };
-const MT_DEFAULT={pilc:'sep',fesoak:'rstab',print:'generic',none:''};
+const MT_DEFAULT={pilc:'sep',fesoak:'rstab',print:'generic',agink:'',none:''};
 /* measurement templates */
 const MT={
   sep:{name:'离心分相评估',fields:[['sup','上清颜色','sel:无色|浅蓝|蓝|深蓝'],['m_fd','冻干物用量 (mg)','num'],['dry','沉淀干重 (mg)','num'],['ext','挤出表现','sel:可挤出且保形|可挤出但塌陷|难以挤出']],calcs:['yield']},
@@ -677,7 +684,7 @@ function vSettings(){
   </div></section>`;
   h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
   h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
-  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13f（任务记录）</div>`;
+  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13g（银墨水流程）</div>`;
   return h;
 }
 function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到项目</a></section>';}
