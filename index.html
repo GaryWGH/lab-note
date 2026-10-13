@@ -602,6 +602,7 @@ function vSettings(){
   </div></section>`;
   h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
   h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 按失败率排序、记录预估与实际：Jacob Steinhardt · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
+  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13b（样品精简 + 批量建组）</div>`;
   return h;
 }
 function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到今天</a></section>';}
