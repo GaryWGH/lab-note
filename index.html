@@ -83,6 +83,7 @@ nav.bottom a[aria-current="page"]{color:var(--accent);background:var(--accent-so
 .viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .viewer img{max-width:100%;max-height:100%;border-radius:6px}
 [hidden]{display:none!important}
+.bar{height:4px;background:var(--soft);border-radius:2px;overflow:hidden;margin-top:5px}.bar>i{display:block;height:100%;background:var(--ok)}
 dl.plan{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font-size:.9rem}
 dl.plan dt{color:var(--muted);font-size:.78rem;padding-top:2px;white-space:nowrap}
 dl.plan dd{margin:0;white-space:pre-wrap;min-width:0}
@@ -114,7 +115,7 @@ table.sheet td.calc{font-family:var(--f-mono);color:var(--accent)}
 <body>
 <div class="wrap" id="app"></div>
 <nav class="bottom" id="nav">
-  <a href="#/" data-nav="">今天</a>
+  <a href="#/" data-nav="">项目</a>
   <a href="#/exps" data-nav="exps">实验</a>
   <a href="#/samples" data-nav="samples">样品</a>
   <a href="#/review" data-nav="review">回顾</a>
@@ -376,29 +377,26 @@ function lam(e){const p=num(e.p),d=num(e.days);if(!p||!d||p>=1)return null;retur
 let regions={};
 function head(title,sub,right){return `<header class="row between"><div style="min-width:0"><h1>${title}</h1>${sub?`<div class="muted small">${sub}</div>`:''}</div><div class="row">${right||''}<span id="syncStatus" class="pill"></span></div></header>`;}
 
+function expProgress(e){const S=live('samples').filter(x=>x.experimentId===e.id);const n=(PT[expTpl(e,S)]||PT.none).steps.length;const d=Math.min(Object.values(e.proc?.done||{}).filter(Boolean).length,n);return {n,d,g:S.length};}
+function expRow(e){const {n,d,g}=expProgress(e);return `<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.title||e.id)}</span>${pill(e.status)}</div><div class="meta">${g} 组${n?` · 步骤 ${d}/${n}`:''}</div>${n?`<div class="bar"><i style="width:${Math.round(d/n*100)}%"></i></div>`:''}</a>`;}
 function vToday(){
-  const L=live('logs');
-  const timers=L.filter(l=>l.kind==='计时'&&!l.done&&l.due).sort((a,b)=>a.due<b.due?-1:1);
-  const todays=L.filter(l=>l.date===today()&&l.kind!=='计时').sort((a,b)=>a.createdAt<b.createdAt?1:-1);
-  const draft=window.__draft||(window.__draft={kind:'记录',text:'',projectId:'',experimentId:'',hours:'',rh:'',temp:'',due:''});
-  let h=head('今天',today());
+  const ord={'进行中':0,'暂停':1,'完成':2,'放弃':3};
+  const P=live('projects').sort((a,b)=>(ord[a.status]??0)-(ord[b.status]??0)||(a.id<b.id?-1:1));
+  const E=live('experiments'),ACT=['计划','进行中','等待结果'];
+  const open=P.filter(p=>!['完成','放弃'].includes(p.status)),closed=P.filter(p=>['完成','放弃'].includes(p.status));
+  let h=head('项目',today(),`<button class="sm" data-act="newProject">新建项目</button>`);
   if(!ghReady())h+=`<div class="banner">数据目前只保存在本机。到 <a href="#/settings">设置</a> 连接 GitHub 私有仓库后，手机和电脑会自动同步，照片也能保存。</div>`;
-  h+=`<section class="card"><h2>记一笔</h2>
-   <div class="chips" id="kindChips">${LOG_KINDS.map(k=>`<button type="button" class="chip" data-kind="${k}" aria-pressed="${draft.kind===k}">${k}</button>`).join('')}</div>
-   <div class="grid" style="margin-top:10px">
-    <label class="f full" for="d_text">内容<textarea id="d_text" data-draft="text" placeholder="做了什么、看到什么、想到什么……">${esc(draft.text)}</textarea></label>
-    <label class="f" for="d_proj">项目<select id="d_proj" data-draft="projectId"><option value=""></option>${live('projects').map(p=>`<option value="${p.id}"${draft.projectId===p.id?' selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
-    <label class="f" for="d_exp">实验<select id="d_exp" data-draft="experimentId"><option value=""></option>${live('experiments').map(e=>`<option value="${e.id}"${draft.experimentId===e.id?' selected':''}>${esc(e.id+' '+e.title)}</option>`).join('')}</select></label>
-    ${draft.kind==='计时'?`<label class="f" for="d_due">到期时间<input id="d_due" type="datetime-local" data-draft="due" value="${esc(draft.due)}"></label>`:`<label class="f" for="d_hours">动手时间 (h)<input id="d_hours" class="mono" inputmode="decimal" data-draft="hours" value="${esc(draft.hours)}"></label>`}
-    <label class="f" for="d_rh">湿度 (%RH)<input id="d_rh" class="mono" inputmode="decimal" data-draft="rh" value="${esc(draft.rh)}"></label>
-    <label class="f" for="d_t">温度 (°C)<input id="d_t" class="mono" inputmode="decimal" data-draft="temp" value="${esc(draft.temp)}"></label>
-   </div>
-   <div class="row" style="margin-top:10px"><button type="button" data-act="addLog">保存</button><span class="muted small">保存后可在记录里加照片</span></div>
-  </section>`;
-  if(timers.length)h+=`<section class="card"><h2>等待中</h2>${timers.map(t=>{const ms=new Date(t.due)-Date.now();const left=ms<=0?'<span class="pill warn">已到时间</span>':`<span class="pill amber">${ms>864e5?Math.floor(ms/864e5)+' 天 ':''}${Math.floor(ms%864e5/36e5)} 小时后</span>`;return `<div class="timer"><div><div>${esc(t.text||'计时')}</div><div class="muted small">${t.experimentId?esc(t.experimentId)+' · ':''}到期 ${esc(t.due.replace('T',' '))}</div></div><div class="row">${left}<button class="ghost sm" data-act="timerDone" data-id="${t.id}">完成</button></div></div>`;}).join('')}</section>`;
-  const act=live('experiments').filter(e=>['计划','进行中','等待结果'].includes(e.status)).sort((a,b)=>a.id<b.id?1:-1);
-  h+=`<section class="card"><div class="row between"><h2>正在做的实验</h2><a class="small" href="#/exps">全部</a></div>${act.length?`<div class="list">${act.map(e=>`<a class="item" href="#/exp/${e.id}"><div class="row between"><span class="t">${esc(e.title||e.id)}</span>${pill(e.status)}</div><div class="meta">${esc(e.id)} · ${live('samples').filter(x=>x.experimentId===e.id).length} 组</div></a>`).join('')}</div>`:'<div class="muted small">没有进行中的实验。</div>'}</section>`;
-  h+=`<section class="card"><h2>今天的记录</h2>${todays.length?`<div class="list">${todays.map(logItem).join('')}</div>`:'<div class="muted small">今天还没有记录。</div>'}</section>`;
+  const card=p=>{const ex=E.filter(e=>e.projectId===p.id);const act=ex.filter(e=>ACT.includes(e.status)).sort((a,b)=>a.id<b.id?1:-1);const fin=ex.filter(e=>e.status==='完成').length;const figs=p.outline?.figs||[];const fd=figs.filter(f=>f.status==='完成').length;
+    return `<section class="card"><div class="row between"><a href="#/project/${p.id}" style="color:var(--ink)"><h2 style="margin:0">${esc(p.name)}</h2></a>${pill(p.status)}</div>
+    ${p.goal?`<div class="muted small" style="margin-top:4px">${esc(p.goal)}</div>`:''}
+    <label class="f full" style="margin-top:10px">下一步<input data-b="projects|${esc(p.id)}|next" value="${esc(p.next||'')}" placeholder="这条线接下来要做的一件事"></label>
+    ${act.length?`<div class="list" style="margin-top:8px">${act.map(expRow).join('')}</div>`:'<div class="muted small" style="margin-top:8px">没有进行中的实验。</div>'}
+    <div class="row between" style="margin-top:8px"><span class="muted small">${[fin?`已完成 ${fin} 个实验`:'',figs.length?`论文图 ${fd}/${figs.length}`:''].filter(Boolean).join(' · ')}</span><button class="ghost sm" data-act="newExp" data-proj="${p.id}">+ 实验</button></div></section>`;};
+  h+=open.map(card).join('');
+  const orphan=E.filter(e=>!e.projectId&&ACT.includes(e.status));
+  if(orphan.length)h+=`<section class="card"><h2>未归入项目的实验</h2><div class="list">${orphan.map(expRow).join('')}</div></section>`;
+  if(!open.length&&!orphan.length)h+='<section class="card"><div class="muted small">还没有项目。点右上角“新建项目”。</div></section>';
+  if(closed.length)h+=`<details class="card"><summary class="small">已完成 / 已放弃的项目（${closed.length}）</summary><div class="list" style="margin-top:6px">${closed.map(p=>`<a class="item" href="#/project/${p.id}"><div class="row between"><span class="t">${esc(p.name)}</span>${pill(p.status)}</div></a>`).join('')}</div></details>`;
   return h;
 }
 function logItem(l){
@@ -473,12 +471,6 @@ function vExp(id){
     h+=`<div class="tablewrap" style="margin-top:8px"><table class="sheet"><thead><tr><th></th>${S.map(s=>`<th><a href="#/sample/${esc(s.id)}">${esc(s.name||s.id)}</a></th>`).join('')}</tr></thead><tbody>${rows}</tbody><tbody id="r_sheet">${regions.sheet()}</tbody><tbody>${tail}</tbody></table></div>`;
   }else h+='<div class="muted small" style="margin-top:8px">还没有组。在下面输入组名，每组成为表里的一列。</div>';
   h+=`<div class="row" style="margin-top:10px;flex-wrap:nowrap"><input id="batchNames" placeholder="加组：组名用逗号分开，如 LiTFSI, EMIM:TFSI"><button class="sm" data-act="batchSamples" data-exp="${id}" style="white-space:nowrap">加组</button></div></section>`;
-  h+=`<section class="card"><h2>结论</h2><div class="grid">
-    ${field('experiments',id,'result','结果与结论','area',e.result)}
-    ${field('experiments',id,'evidence','证据等级',optsOf(EVIDENCE),e.evidence)}
-    ${field('experiments',id,'failLayer','若失败，问题出在哪一层',optsOf(FAIL_LAYERS),e.failLayer)}
-    ${field('experiments',id,'failWhy','为什么失败 / 下次怎么避免','area',e.failWhy)}
-  </div></section>`;
   const logs=live('logs').filter(l=>l.experimentId===id).sort((a,b)=>a.createdAt<b.createdAt?1:-1);
   if(logs.length)h+=`<section class="card"><h2>相关日志</h2><div class="list">${logs.map(logItem).join('')}</div></section>`;
   h+=`<div class="row" style="justify-content:flex-end"><button class="danger sm" data-act="del" data-c="experiments" data-id="${e.id}">删除这个实验</button></div>`;
@@ -660,10 +652,10 @@ function vSettings(){
   </div></section>`;
   h+=`<section class="card"><h2>备份</h2><div class="row"><button class="ghost" data-act="export">导出全部数据 (JSON)</button><label class="btn ghost" for="impFile">导入并合并</label><input type="file" id="impFile" accept=".json,application/json" hidden></div><p class="muted small">导入会与现有数据合并，同一条记录保留较新的版本。照片不包含在 JSON 里，它们在 GitHub 仓库的 photos 文件夹中。</p></section>`;
   h+=`<section class="card"><h2>框架来源</h2><div class="small">论文提纲组织研究：Whitesides · 每日日志与双周回顾：John Schulman · 可行性×兴趣与“云”中的意外发现：Uri Alon · 对时间诚实：Michael Nielsen · 样品—工艺—测量的数据模型：NOMAD ELN。</div></section>`;
-  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13c（实验单：步骤一次 + 分组记录表）</div>`;
+  h+=`<div class="muted small" style="text-align:center;margin:8px 0 16px">版本 2026-10-13d（项目总览）</div>`;
   return h;
 }
-function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到今天</a></section>';}
+function notFound(){return head('找不到记录')+'<section class="card"><a href="#/">回到项目</a></section>';}
 
 /* ================= router ================= */
 function route(){const h=location.hash.replace(/^#\/?/,'');const [a,b]=h.split('/');return {a:a||'',b:b?decodeURIComponent(b):''};}
