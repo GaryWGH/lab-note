@@ -35,6 +35,19 @@ cat ~/.ssh/id_ed25519.pub                                # 复制这一整行，
    ```
 3. 重启电脑。开机后会自动弹出 Ubuntu 窗口，设置一个 Linux 用户名和密码（密码输入时不显示，正常）。
 
+> **报错 403 / "已禁止"**：默认从微软商店下载被拒绝了。改成从 GitHub 下载：
+> ```powershell
+> wsl --install --web-download
+> # 如果 WSL 已装好、只是 Ubuntu 没下下来：
+> wsl --install -d Ubuntu --web-download
+> ```
+> 开着 VPN/代理的话，关掉或打开各试一次。还不行就手动装：
+> ```powershell
+> dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+> dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+> ```
+> 重启后，从 https://github.com/microsoft/WSL/releases 下载最新的 `wsl.x.x.x.x64.msi` 双击安装，再运行 `wsl --install -d Ubuntu --web-download`。
+
 ## 第 2 步：在 Ubuntu 里配环境
 
 打开开始菜单里的 **Ubuntu**，进入解压的目录运行脚本（Windows 的 C 盘在 WSL 里是 `/mnt/c`）：
@@ -45,6 +58,18 @@ bash 1_setup_wsl_env.sh
 ```
 
 最后看到 `cuda available: True` 和 `NVIDIA GeForce RTX 3090` 就成功了。
+
+> 脚本默认用**清华镜像**下载 Miniforge、conda 包和 pip 包（WSL 不走 Windows 的代理，直连 GitHub 经常卡住）。不想用镜像：`MIRROR=0 bash 1_setup_wsl_env.sh`。
+>
+> **中途卡住**：按 `Ctrl+C`，直接重新运行脚本即可，装了一半的 Miniforge 会自动清理重装。
+> 如果清华镜像也很慢，可以在 Windows 浏览器里下载
+> https://mirrors.tuna.tsinghua.edu.cn/github-release/conda-forge/miniforge/LatestRelease/Miniforge3-Linux-x86_64.sh ，然后：
+> ```bash
+> rm -rf ~/miniforge3
+> bash "/mnt/c/Users/<你的Windows用户名>/Downloads/Miniforge3-Linux-x86_64.sh" -b -p ~/miniforge3
+> ~/miniforge3/bin/conda init bash
+> bash 1_setup_wsl_env.sh      # 再跑一次，会跳过已装好的 Miniforge
+> ```
 
 ## 第 3 步：开 SSH 服务
 
