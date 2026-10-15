@@ -33,8 +33,14 @@ if ($PubKey -notmatch '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-\S+) ') {
 }
 
 Write-Host "[1/6] Installing OpenSSH Server..."
-$cap = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*' | Select-Object -First 1
-if ($cap.State -ne 'Installed') { Add-WindowsCapability -Online -Name $cap.Name | Out-Null }
+if (Get-Service -Name sshd -ErrorAction SilentlyContinue) {
+    # Already installed (via Optional features or the GitHub MSI) - skip the slow Windows Update download
+    Write-Host "      sshd already installed, skipping."
+} else {
+    Write-Host "      Downloading from Windows Update, this can take 5-20 minutes..."
+    $cap = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*' | Select-Object -First 1
+    Add-WindowsCapability -Online -Name $cap.Name | Out-Null
+}
 Set-Service -Name sshd -StartupType Automatic
 Start-Service sshd
 

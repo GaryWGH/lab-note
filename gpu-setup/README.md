@@ -82,6 +82,11 @@ powershell -ExecutionPolicy Bypass -File .\2_setup_ssh.ps1 -PubKey "ssh-ed25519 
 
 脚本最后会打印 **Windows 用户名** 和 **IP 地址**，记下来。
 
+> **"Installing OpenSSH Server" 很慢**：它在从 Windows Update 下载，通常要 5–20 分钟，进度条长时间不动也属正常，先等着。
+> 超过 30 分钟还没动，就 `Ctrl+C` 停掉，换一种方式装好 sshd，再重新运行上面的命令（脚本发现 sshd 已装好会跳过这一步）：
+> - **方法 A**：设置 → 系统 → 可选功能 → 添加功能 → 搜 "OpenSSH 服务器" → 安装（来源相同，但能看到进度）。
+> - **方法 B**（Windows Update 不通时）：从 https://github.com/PowerShell/Win32-OpenSSH/releases 下载最新的 `OpenSSH-Win64-vX.X.X.X.msi`，双击安装。
+
 ## 第 4 步：Mac 上连接
 
 1. 编辑 `~/.ssh/config`（没有就新建），加入：
