@@ -1,0 +1,18 @@
+# 远程 GPU 运行说明
+
+这台 Mac 没有可用的 CUDA GPU。所有训练、推理和较重的计算都在远端机器上运行：
+- 远端：Windows PC 上的 WSL2 Ubuntu，RTX 3090（24GB），通过 `ssh gpu` 连接
+- 远端项目目录：`~/projects/<本项目文件夹名>`，conda 环境 `oect`（Miniforge，装在 `~/miniforge3`）
+- 代码以 Mac 为准；`run_remote.sh` 每次运行前会自动把代码同步过去
+
+## 规则
+- 不要在 Mac 本地跑训练，也不要在本地安装 CUDA 相关依赖。
+- 运行代码：`./run_remote.sh "python xxx.py ..."`
+- 新代码或改动较大时，先用很小的配置（少量 epoch、小 batch、少量数据）试跑，确认没有报错再正式运行。
+- 长任务（预计超过几分钟）用后台模式：`./run_remote.sh -b <任务名> "python xxx.py ..."`，
+  然后用 `ssh gpu 'tail -n 50 ~/projects/<项目名>/logs/<任务名>.log'` 查看进度，
+  用 `ssh gpu nvidia-smi` 查看显存和占用。
+- 数据放在远端的 `data/` 里，不会同步，不要试图从 Mac 上传大文件。
+- 结果写到 `outputs/`，日志写到 `logs/`；需要在本地分析时运行 `./run_remote.sh -f` 拉回来。
+- 不要在远端安装或登录任何 Claude / Anthropic 产品。
+- 远端出现报错时，先看完整的 traceback，在 Mac 上修改代码，再重新运行。不要直接在远端改文件，否则下次同步会被覆盖。
