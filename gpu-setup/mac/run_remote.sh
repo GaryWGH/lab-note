@@ -7,8 +7,12 @@
 #   ./run_remote.sh -b exp1 "python train.py"          # 后台运行（tmux），日志写到 logs/exp1.log
 #   ./run_remote.sh -f                                  # 把远端 outputs/ 和 logs/ 拉回 Mac
 #
+# 有多台 GPU 机器时，用 GPU_HOST 选择（不写默认 gpu，即 3090）：
+#   GPU_HOST=gpu4090 ./run_remote.sh "python train.py"
+#   GPU_HOST=gpu4090 ./run_remote.sh -f
+#
 # 需要改的只有下面三行。
-HOST=gpu                                          # 对应 ~/.ssh/config 里的 Host
+HOST="${GPU_HOST:-gpu}"                           # 对应 ~/.ssh/config 里的 Host
 ENV=oect                                          # 远端 conda 环境名
 CONDA_SH='~/miniforge3/etc/profile.d/conda.sh'    # 远端 conda 路径（1_setup_wsl_env.sh 装在这里）
 

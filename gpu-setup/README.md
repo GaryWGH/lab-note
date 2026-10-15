@@ -1,5 +1,7 @@
 # 用 Windows 的 3090 跑程序（Mac 上的 Claude 通过 SSH 远程调试）
 
+> 第二台机器（4090）的配置见 [README-4090.md](README-4090.md)，步骤更快。
+
 结构：Claude 只在 **Mac** 上运行和登录。Windows 只当一台通过 SSH 连接的 GPU 服务器，**不安装、不登录任何 Claude 产品**。
 
 ```
