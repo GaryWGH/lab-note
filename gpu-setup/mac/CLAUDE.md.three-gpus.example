@@ -1,0 +1,30 @@
+# 远程 GPU 运行说明（三台 GPU 机器）
+
+这台 Mac 没有可用的 CUDA GPU。所有训练、推理和较重的计算都在远端机器上运行。可用的机器：
+
+| ssh 名称 | 显卡 | 用途 |
+|---|---|---|
+| `gpu4090` | RTX 4090（24GB） | 最快。正式训练和较重的任务优先用这台 |
+| `gpu` | RTX 3090（24GB） | 调试、小规模试跑，或与 4090 同时跑另一组实验 |
+| `gpua5000` | RTX A5000（24GB，ECC） | **备用机**。只在另外两台都被占用、需要再并行一组实验，或我明确要求时使用 |
+
+三台都是 Windows 上的 WSL2 Ubuntu，项目目录 `~/projects/<本项目文件夹名>`，conda 环境 `oect`（Miniforge，装在 `~/miniforge3`）。代码以 Mac 为准，`run_remote.sh` 每次运行前会自动把代码同步到所选机器。
+
+## 规则
+- 不要在 Mac 本地跑训练，也不要在本地安装 CUDA 相关依赖。
+- 选择机器：命令前加 `GPU_HOST=gpu4090`、`GPU_HOST=gpu` 或 `GPU_HOST=gpua5000`（不写默认是 `gpu`，即 3090）。
+  例：`GPU_HOST=gpu4090 ./run_remote.sh "python train.py"`
+- 开始任务前用 `ssh <机器> nvidia-smi` 看一下占用，避免在已经有任务在跑的卡上再加任务。
+  某台机器连不上（超时）时，跳过它，改用其他机器，并告诉我哪台连不上。
+- 新代码或改动较大时，先用很小的配置在 `gpu` 上试跑，确认没有报错再正式运行。
+- 长任务用后台模式：`GPU_HOST=<机器> ./run_remote.sh -b <任务名> "python xxx.py ..."`，
+  用 `ssh <机器> 'tail -n 50 ~/projects/<项目名>/logs/<任务名>.log'` 查看进度。
+- 多组实验（不同超参数、不同数据）可以分别放到不同机器上同时跑；任务名要区分开。
+  不要尝试多机分布式训练（多台合训一个模型）。
+- 每台机器的 `data/` 各自独立，不会同步。在哪台跑，就要确认那台的 `data/` 里有数据。
+  在机器之间传数据，经 Mac 中转、不落盘：
+  `ssh <源机器> "tar -C ~/projects/<项目名>/data -cf - ." | ssh <目标机器> "mkdir -p ~/projects/<项目名>/data && tar -C ~/projects/<项目名>/data -xf -"`
+- 结果写到 `outputs/`，日志写到 `logs/`。拉回本地用 `GPU_HOST=<机器> ./run_remote.sh -f`。
+  所有机器的结果会拉到同一个本地 outputs/，所以输出文件名里要带上实验名，避免互相覆盖。
+- 不要在远端安装或登录任何 Claude / Anthropic 产品。
+- 远端出现报错时，先看完整的 traceback，在 Mac 上修改代码，再重新运行。不要直接在远端改文件，否则下次同步会被覆盖。

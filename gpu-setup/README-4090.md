@@ -10,6 +10,8 @@
 
 完成后，Mac 上会有两台机器可用：`gpu`（3090）和 `gpu4090`（4090）。Windows 上同样**不安装、不登录任何 Claude 产品**。
 
+> **再加更多机器（比如 RTX A5000）也照这份文档做**，差别只有几处，见文末"[再加一台机器（A5000 等）](#再加一台机器a5000-等)"。
+
 ---
 
 ## 第 0 步：把文件拿到 4090 电脑上
@@ -125,4 +127,48 @@ powershell -ExecutionPolicy Bypass -File .\2_setup_ssh.ps1 -PubKey "ssh-ed25519 
 - **`ssh gpu4090` 超时**：确认两台在同一网络；Windows 网络改成"专用网络"；Mac 开 VPN 的 TUN 模式时，把局域网网段设为直连。
 - **IP 变了**：Windows 上 `ipconfig` 查新 IP，改 `~/.ssh/config` 里 `gpu4090` 的 `HostName`。
 - **要求输入密码**：重新运行 3b，确认粘贴的是完整一行公钥。
+- **SSH 登录后报 `execvpe(/bin/bash) failed: No such file or directory`**：SSH 进入的是**默认** WSL 发行版，而默认的不是 Ubuntu（常见于装过 Docker Desktop 的电脑，默认成了 `docker-desktop`）。在 Windows 上：
+  ```powershell
+  wsl -l -v                    # 带 * 的是当前默认
+  wsl --set-default Ubuntu     # 换成你实际用的 Ubuntu 名字
+  ```
+  要用 SSH 登录的那个 Windows 账户运行，默认设置是按用户保存的。
+- **电脑上已有一个 Ubuntu，但不知道密码**：不用删，以 root 进去重设：
+  ```powershell
+  wsl -d Ubuntu -u root        # 不需要密码
+  ```
+  然后 `ls /home` 看用户名，`passwd 用户名` 设新密码。
+  确定不要了才删（**会永久删除里面所有文件**，可先 `wsl --export Ubuntu D:\ubuntu-backup.tar` 备份）：
+  `wsl --unregister Ubuntu`，再 `wsl --install -d Ubuntu --web-download`。
+  不确定是不是别人的，就另装一个 `wsl --install -d Ubuntu-24.04 --web-download`，再 `wsl --set-default Ubuntu-24.04`。
 - 其他问题见 [README.md](README.md) 的"常见问题"。
+
+---
+
+## 再加一台机器（A5000 等）
+
+步骤和上面完全一样，只有这几处不同：
+
+1. **显卡驱动**：RTX A5000 这类专业卡要装 **RTX 企业版驱动**，不是游戏卡的 Game Ready 驱动。
+   在 NVIDIA 驱动下载页选：产品类型 **NVIDIA RTX / Quadro** → 系列 **NVIDIA RTX Series** → 产品 **RTX A5000**。
+   WSL 里同样不要装驱动。
+2. **ssh 名称换一个**，比如 `gpua5000`：
+   ```bash
+   cat >> ~/.ssh/config <<'EOF'
+
+   Host gpua5000
+       HostName 10.x.x.x
+       User 你的Windows用户名
+       ServerAliveInterval 30
+   EOF
+   ssh gpua5000 "uname -a && nvidia-smi"
+   ```
+   之后用 `GPU_HOST=gpua5000 ./run_remote.sh "..."` 选择这台。
+3. **公钥**：继续用 Mac 上同一个 `~/.ssh/id_ed25519.pub`。
+4. **CLAUDE.md**：换成三台机器的版本，让 Claude Code 知道有这台备用机：
+   ```bash
+   curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/GaryWGH/lab-note/main/gpu-setup/mac/CLAUDE.md.three-gpus.example
+   ```
+5. **数据**：这台的 `data/` 也是独立的，要在它上面跑时先传一份过去。
+
+A5000 是 24GB 显存（带 ECC），速度大致和 3090 相当或略慢，功耗更低，适合长时间跑任务。
